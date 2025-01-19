@@ -5,8 +5,8 @@
 :: build -dll -b [Debug|Release]
 ::
 :: Will generate the hboffice.lib with the Harbour wrapper and runtime dll loader.
-:: Visual Studio (msvc64) or MinGW (mingw64) allowed
-:: build -lib -b [Debug|Release] -comp [mingw64|msvc64]
+:: Visual Studio (msvc64) or MinGW (mingw64) or Clang allowed
+:: build -lib -b [Debug|Release] -comp [msvc64|mingw64|clang]
 
 @echo off
 
@@ -99,7 +99,7 @@ set HBMK_FLAGS=-debug
 
 :hbmk2
 echo HBMK HOME: %HBMK_PATH%
-call %HBMK_PATH%\\hbmk2.exe -comp=%COMPILER% %HBMK_FLAGS% %CWD%\src\hboffice\hboffice.hbp || goto error_hboffice
+call %HBMK_PATH%\\hbmk2.exe %HBMK_FLAGS% -comp=%COMPILER% %CWD%\src\hboffice\hboffice.hbp || goto error_hboffice
 
 echo ---------------------------
 echo HBOFFICE LIB build succeed

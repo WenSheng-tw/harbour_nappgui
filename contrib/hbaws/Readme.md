@@ -3,14 +3,18 @@
 * [Introduction](#introduction)
 * [Installation of AWS-SDK-C++](#installation-of-aws-sdk-c++)
     - [AWS-SDK with MinGW](#aws-sdk-with-mingw)
+    - [AWS-SDK with Clang](#aws-sdk-with-clang)
     - [AWS-SDK with MSVC](#aws-sdk-with-msvc)
     - [AWS-SDK with GCC Linux](#aws-sdk-with-gcc-linux)
+    - [AWS-SDK with CLANG Linux](#aws-sdk-with-clang-linux)
     - [AWS-SDK result](#aws-sdk-result)
 
 * [Build HBAWS](#build-hbaws)
     - [Build HBAWS with MinGW](#build-hbaws-with-mingw)
+    - [Build HBAWS with Clang](#build-hbaws-with-clang)
     - [Build HBAWS with MSVC](#build-hbaws-with-msvc)
     - [Build HBAWS with GCC Linux](#build-hbaws-with-gcc-linux)
+    - [Build HBAWS with CLANG Linux](#build-hbaws-with-clang-linux)
 * [HBAWS examples](#hbaws-examples)
 * [Reference guide](#reference-guide)
     - [HBAWS_INIT](#hbaws_init)
@@ -61,6 +65,14 @@ set AWS_SDK_ROOT=C:\aws-sdk
 awssdk -b [Debug|Release] -comp mingw64
 ```
 
+### AWS-SDK with Clang
+
+```
+cd contrib\hbaws
+set AWS_SDK_ROOT=C:\aws-sdk
+awssdk -b [Debug|Release] -comp clang
+```
+
 ### AWS-SDK with MSVC
 
 At least Visual Studio 2015 is required. First, you need to set the `CMAKE_GENERATOR` environment variable to the version you plan to use.
@@ -82,7 +94,15 @@ awssdk -b [Debug|Release] -comp msvc64
 ```
 AWS_SDK_ROOT=/home/user/aws-sdk
 cd contrib/hbaws
-./awssdk -b [Debug|Release]
+./awssdk -comp gcc -b [Debug|Release]
+```
+
+### AWS-SDK with CLANG Linux
+
+```
+AWS_SDK_ROOT=/home/user/aws-sdk
+cd contrib/hbaws
+./awssdk -comp clang -b [Debug|Release]
 ```
 
 ### AWS-SDK result
@@ -119,6 +139,16 @@ build -b [Debug|Release] -comp mingw64
 
 The `libhbaws.a` will be generated in `hbaws\build\[Debug|Release]\lib`.
 
+### Build HBAWS with Clang
+
+```
+cd contrib\hbaws
+set AWS_SDK_ROOT=C:\aws-sdk
+build -b [Debug|Release] -comp clang
+```
+
+The `libhbaws.a` will be generated in `hbaws\build\[Debug|Release]\lib`.
+
 ### Build HBAWS with MSVC
 
 The HBMK2 system needs access to MSVC compilers (cl). To do this, you need to run the corresponding script according to the version of VisualStudio installed. For example, for VS 2017.
@@ -140,7 +170,17 @@ The `hbaws.lib` will be generated in `hbaws\build\[Debug|Release]\lib`.
 ```
 cd contrib/hbaws
 export AWS_SDK_ROOT=/home/user/aws-sdk
-build -b [Debug|Release]
+build -comp gcc -b [Debug|Release]
+```
+
+The `libhbaws.a` will be generated in `hbaws/build/[Debug|Release]/lib`.
+
+### Build HBAWS with CLANG Linux
+
+```
+cd contrib/hbaws
+export AWS_SDK_ROOT=/home/user/aws-sdk
+build -comp clang -b [Debug|Release]
 ```
 
 The `libhbaws.a` will be generated in `hbaws/build/[Debug|Release]/lib`.

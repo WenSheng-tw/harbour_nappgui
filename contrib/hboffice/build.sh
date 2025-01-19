@@ -4,11 +4,10 @@
 # HBOffice build script
 #
 # Will generate the libhboffice.so with the LibreOffice C-Wrapper.
-# build -dll -b [Debug|Release]
+# build -dll -comp [gcc|clang] -b [Debug|Release]
 #
-# Will generate the hboffice.lib with the Harbour wrapper and runtime dll loader.
-# Visual Studio (msvc64) or MinGW (mingw64) allowed
-# build -lib -b [Debug|Release] -comp [mingw64|msvc64]
+# Will generate the libhboffice.a with the Harbour wrapper and runtime dll loader.
+# build -lib -comp [gcc|clang] -b [Debug|Release]
 
 #
 # Input parameters
@@ -26,6 +25,11 @@ fi
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -comp)
+      COMPILER="$2"
+      shift
+      shift
+      ;;
     -dll)
       OPERATION=dll
       shift
@@ -68,7 +72,14 @@ if [ $OPERATION == "dll" ]; then
     else
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD || exit 1
+        if [ "$COMPILER" == "gcc" ]; then
+            cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=$BUILD || exit 1
+        fi
+
+        if [ "$COMPILER" == "clang" ]; then
+            cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang -DCMAKE_BUILD_TYPE=$BUILD || exit 1
+        fi
+
         make -j 4 || exit 1
     fi
 
@@ -90,7 +101,7 @@ elif [ $OPERATION == "lib" ]; then
         HBMK_FLAGS=-debug
     fi
 
-    $HBMK_PATH/hbmk2 $HBMK_FLAGS $CWD/src/hboffice/hboffice.hbp || exit 1
+    $HBMK_PATH/hbmk2 $HBMK_FLAGS -comp=$COMPILER $CWD/src/hboffice/hboffice.hbp || exit 1
     echo ---------------------------
     echo HBOFFICE LIB build succeed
     echo ---------------------------
