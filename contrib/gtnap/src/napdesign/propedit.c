@@ -835,6 +835,10 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
             layout_dbind_obj(data->text_layout, cell->widget.text, FText);
             panel_visible_layout(data->cell_panel, 6);
         }
+		else if (cell->type == ekCELL_TYPE_IMAGE)
+		{
+
+		}
         else
         {
             cassert(FALSE);

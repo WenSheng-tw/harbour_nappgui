@@ -958,5 +958,13 @@ void designer_inspect_select(Designer *app, const uint32_t row)
 
 /*---------------------------------------------------------------------------*/
 
+const char_t *designer_folder_path(const Designer *app)
+{
+    cassert_no_null(app);
+    return tc(app->folder_path);
+}
+
+/*---------------------------------------------------------------------------*/
+
 #include <osapp/osmain.h>
 osmain_sync(0.1, i_create, i_destroy, i_update, "", Designer)

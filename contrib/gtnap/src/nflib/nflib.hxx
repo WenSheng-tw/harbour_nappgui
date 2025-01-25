@@ -11,6 +11,7 @@ typedef struct _fbutton_t FButton;
 typedef struct _fcheck_t FCheck;
 typedef struct _fedit_t FEdit;
 typedef struct _ftext_t FText;
+typedef struct _fimage_t FImage;
 typedef struct _fcolumn_t FColumn;
 typedef struct _frow_t FRow;
 /* Must be a union (when dbind supports) */
@@ -27,7 +28,8 @@ typedef enum _celltype_t
     ekCELL_TYPE_CHECK,
     ekCELL_TYPE_EDIT,
     ekCELL_TYPE_LAYOUT,
-    ekCELL_TYPE_TEXT
+    ekCELL_TYPE_TEXT,
+	ekCELL_TYPE_IMAGE
 } celltype_t;
 
 /* Don't change the order. Add new values to end */
@@ -79,6 +81,13 @@ struct _ftext_t
     real32_t min_height;
 };
 
+struct _fimage_t
+{
+    String *path;
+	real32_t min_width;
+    real32_t min_height;
+};
+
 struct _fcolumn_t
 {
     real32_t margin_right;
@@ -98,6 +107,7 @@ struct _fwidget_t
     FCheck *check;
     FEdit *edit;
     FText *text;
+    FImage *image;
     FLayout *layout;
 };
 

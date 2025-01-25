@@ -203,10 +203,11 @@ void dform_compose(DForm *form)
     if (form->glayout == NULL)
     {
         Panel *panel = panel_create();
+        const char_t *resource_path = designer_folder_path(form->app);
         cassert(form->window == NULL);
         cassert(form->dlayout == NULL);
         form->dlayout = dlayout_from_flayout(form->flayout);
-        form->glayout = flayout_to_gui(form->flayout, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
+        form->glayout = flayout_to_gui(form->flayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
         panel_layout(panel, form->glayout);
         form->window = window_create(ekWINDOW_STD);
         window_panel(form->window, panel);
@@ -520,8 +521,9 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
                 if (fsublayout != NULL)
                 {
+                    const char_t *resource_path = designer_folder_path(form->app);
                     DLayout *dsublayout = dlayout_from_flayout(fsublayout);
-                    Layout *gsublayout = flayout_to_gui(fsublayout, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
+                    Layout *gsublayout = flayout_to_gui(fsublayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
                     i_layout_obj_names(form, fsublayout);
                     i_sel_remove_cell(&sel);
                     dlayout_add_layout(sel.dlayout, dsublayout, sel.col, sel.row);
@@ -725,6 +727,10 @@ void dform_synchro_text(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+//	ekCELL_TYPE_IMAGE
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel)
 {
     cassert_no_null(form);
@@ -890,6 +896,8 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "EditBoxCell";
             case ekCELL_TYPE_TEXT:
                 return "TextViewCell";
+            case ekCELL_TYPE_IMAGE:
+                return "ImageViewCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();
