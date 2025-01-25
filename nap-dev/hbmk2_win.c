@@ -14,6 +14,7 @@ FILE *__cdecl __iob_func(void) {
   return _iob;
 }
 
+/*
 HB_FUNC_EXTERN(HB_GT_NAP);
 HB_FUNC_EXTERN(HB_GT_WIN);
 
@@ -21,3 +22,4 @@ void _hb_lnk_ForceLink_hbmk(void) {
   HB_FUNC_EXEC(HB_GT_NAP);
   HB_FUNC_EXEC(HB_GT_WIN);
 }
+*/
