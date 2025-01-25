@@ -1,7 +1,7 @@
 /* Form layout */
 
 #include "flayout.h"
-#include "nflib_res.h"
+#include "nflib.h"
 #include <gui/button.h>
 #include <gui/buttonh.h>
 #include <gui/cell.h>
@@ -12,12 +12,11 @@
 #include <gui/edit.h>
 #include <gui/textview.h>
 #include <gui/imageview.h>
-#include <geom2d/s2d.h>
 #include <draw2d/image.h>
+#include <geom2d/s2d.h>
 #include <core/arrst.h>
 #include <core/dbind.h>
 #include <core/heap.h>
-#include <core/respack.h>
 #include <core/stream.h>
 #include <core/strings.h>
 #include <sewer/cassert.h>
@@ -888,10 +887,8 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
 					else
 					{
                         /* Use a default image */
-                        ResPack *pack = nflib_res_respack("");
-                        const Image *rimage = image_from_resource(pack, NOIMAGE_PNG);
+                        const Image *rimage = nflib_default_image();
                         imageview_image(gimage, rimage);
-                        respack_destroy(&pack);
 					}
 
 					str_destroy(&path);

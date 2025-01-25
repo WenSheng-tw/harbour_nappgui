@@ -1,13 +1,17 @@
 /* NAppGUI forms common base */
 
 #include "nflib.h"
+#include "nflib_res.h"
 #include <gui/gui.h>
+#include <draw2d/image.h>
 #include <core/dbind.h>
+#include <core/respack.h>
 #include <osbs/log.h>
 #include <sewer/blib.h>
 #include <sewer/cassert.h>
 
 static uint32_t i_NUM_USERS = 0;
+static ResPack *i_RESPACK = NULL;
 
 /*---------------------------------------------------------------------------*/
 
@@ -169,9 +173,21 @@ void nflib_finish(void)
     cassert(i_NUM_USERS > 0);
     if (i_NUM_USERS == 1)
     {
+        if (i_RESPACK != NULL)
+            respack_destroy(&i_RESPACK);
+
         /* Unregister types (when dbind support it) */
         gui_finish();
     }
 
     i_NUM_USERS -= 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+const Image* nflib_default_image(void)
+{
+    if (i_RESPACK == NULL)
+        i_RESPACK = nflib_res_respack("");
+	return image_from_resource(i_RESPACK, NOIMAGE_PNG);
 }

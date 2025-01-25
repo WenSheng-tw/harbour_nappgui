@@ -516,7 +516,18 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 }
             }
             
-            case ekWIDGET_GRID_LAYOUT:
+			case ekWIDGET_IMAGEVIEW:
+			{
+                const char_t *folder_path = designer_folder_path(form->app);
+				FImage *fimage = dialog_new_image(window, &sel, folder_path);
+                if (fimage != NULL)
+                {
+                    dbind_destroy(&fimage, FImage);
+                }
+                return FALSE;
+			}
+
+			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
                 if (fsublayout != NULL)
