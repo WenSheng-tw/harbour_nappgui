@@ -12,6 +12,7 @@
 #include <gui/button.h>
 #include <gui/edit.h>
 #include <gui/label.h>
+#include <gui/imageview.h>
 #include <gui/textview.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
@@ -522,9 +523,24 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
 				FImage *fimage = dialog_new_image(window, &sel, folder_path);
                 if (fimage != NULL)
                 {
-                    dbind_destroy(&fimage, FImage);
+                    ImageView *gimage = imageview_create();
+                    //textview_editable(text, !ftext->read_only);
+                    imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
+                    i_sel_remove_cell(&sel);
+                    flayout_add_image(sel.flayout, fimage, sel.col, sel.row);
+                    layout_imageview(sel.glayout, gimage, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
                 }
-                return FALSE;
+                else
+                {
+                    return FALSE;
+                }
 			}
 
 			case ekWIDGET_GRID_LAYOUT:

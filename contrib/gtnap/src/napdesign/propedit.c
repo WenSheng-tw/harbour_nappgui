@@ -38,6 +38,7 @@ struct _propdata_t
     Layout *check_layout;
     Layout *edit_layout;
     Layout *text_layout;
+    Layout *image_layout;
     Cell *column_margin_cell;
     Cell *row_margin_cell;
     Label *layout_geom_label;
@@ -593,6 +594,63 @@ static Layout *i_text_layout(PropData *data)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnImageNotify(PropData *data, Event *e)
+{
+    cassert_no_null(data);
+    cassert(event_type(e) == ekGUI_EVENT_OBJCHANGE);
+    //if (evbind_modify(e, FText, bool_t, read_only) == TRUE
+    //    || evbind_modify(e, FText, real32_t, min_width) == TRUE
+    //    || evbind_modify(e, FText, real32_t, min_height) == TRUE)
+    //{
+    //    dform_synchro_text(data->form, &data->sel);
+
+    //    if (evbind_modify(e, FText, real32_t, min_width) == TRUE
+    //        || evbind_modify(e, FText, real32_t, min_height) == TRUE)
+    //    {
+    //        dform_compose(data->form);
+    //        designer_canvas_update(data->app);
+    //    }
+    //}
+}
+
+/*---------------------------------------------------------------------------*/
+
+static Layout *i_image_layout(PropData *data)
+{
+    Layout *layout1 = layout_create(1, 4);
+    Layout *layout2 = layout_create(2, 2);
+    Layout *layout3 = i_value_updown_layout();
+    Layout *layout4 = i_value_updown_layout();
+    Button *button1 = button_check();
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    Label *label3 = label_create();
+    cassert_no_null(data);
+    label_text(label1, "ImageView properties");
+    label_text(label2, "MWidth");
+    label_text(label3, "MHeight");
+    button_text(button1, "Read only");
+    layout_label(layout1, label1, 0, 0);
+    layout_button(layout1, button1, 0, 1);
+    layout_label(layout2, label2, 0, 0);
+    layout_label(layout2, label3, 0, 1);
+    layout_layout(layout2, layout3, 1, 0);
+    layout_layout(layout2, layout4, 1, 1);
+    layout_layout(layout1, layout2, 0, 2);
+    layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
+    layout_hmargin(layout2, 0, i_GRID_HMARGIN);
+    layout_hexpand(layout2, 1);
+    layout_vexpand(layout1, 3);
+    //cell_dbind(layout_cell(layout1, 0, 1), FText, bool_t, read_only);
+    cell_dbind(layout_cell(layout2, 1, 0), FImage, real32_t, min_width);
+    cell_dbind(layout_cell(layout2, 1, 1), FImage, real32_t, min_height);
+    layout_dbind(layout1, listener(data, i_OnImageNotify, PropData), FImage);
+    data->image_layout = layout1;
+    return layout1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_OnCellNotify(PropData *data, Event *e)
 {
     cassert_no_null(data);
@@ -665,6 +723,7 @@ static Panel *i_cell_content_panel(PropData *data)
     Layout *layout5 = i_check_layout(data);
     Layout *layout6 = i_edit_layout(data);
     Layout *layout7 = i_text_layout(data);
+    Layout *layout8 = i_image_layout(data);
     Panel *panel = panel_create();
     cassert_no_null(data);
     panel_layout(panel, layout1);
@@ -674,6 +733,7 @@ static Panel *i_cell_content_panel(PropData *data)
     panel_layout(panel, layout5);
     panel_layout(panel, layout6);
     panel_layout(panel, layout7);
+    panel_layout(panel, layout8);
     panel_visible_layout(panel, 0);
     data->cell_panel = panel;
     return panel;
@@ -837,7 +897,8 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         }
 		else if (cell->type == ekCELL_TYPE_IMAGE)
 		{
-
+            layout_dbind_obj(data->image_layout, cell->widget.image, FImage);
+            panel_visible_layout(data->cell_panel, 7);
 		}
         else
         {

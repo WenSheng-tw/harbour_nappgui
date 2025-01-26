@@ -674,7 +674,7 @@ void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const
     cassert_no_null(cell);
     cassert_no_null(image);
     cassert(cell->type == ekCELL_TYPE_EMPTY);
-    cell->type = ekCELL_TYPE_TEXT;
+    cell->type = ekCELL_TYPE_IMAGE;
     cell->halign = ekHALIGN_CENTER;
     cell->valign = ekHALIGN_CENTER;
     cell->widget.image = image;
