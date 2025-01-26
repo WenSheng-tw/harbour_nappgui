@@ -19,6 +19,7 @@
 #include <gui/panel.h>
 #include <gui/panel.inl>
 #include <gui/window.h>
+#include <draw2d/image.h>
 #include <geom2d/v2d.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
@@ -28,6 +29,7 @@
 #include <core/strings.h>
 #include <sewer/bstd.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 struct _dform_t
 {
@@ -524,7 +526,16 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 if (fimage != NULL)
                 {
                     ImageView *gimage = imageview_create();
-                    //textview_editable(text, !ftext->read_only);
+
+                    {
+                        String *path = str_printf("%s%s", folder_path, tc(fimage->path));
+                        Image *image = image_from_file(tc(path), NULL);
+                        imageview_scale(gimage, ekGUI_SCALE_AUTO);
+                        imageview_image(gimage, image);
+                        ptr_destopt(image_destroy, &image, Image);
+                        str_destroy(&path);
+                    }
+
                     imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
                     i_sel_remove_cell(&sel);
                     flayout_add_image(sel.flayout, fimage, sel.col, sel.row);

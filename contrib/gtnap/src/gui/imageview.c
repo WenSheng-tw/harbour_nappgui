@@ -37,6 +37,7 @@ struct _vimgdata_t
     Image *image;
     uint32_t frame;
     real64_t ftime;
+    S2Df size;
     gui_scale_t scale;
     bool_t mouse_over;
     Listener *OnOverDraw;
@@ -145,28 +146,49 @@ static void i_OnAcceptFocus(View *view, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_apply_size(ImageView *view, VImgData *data)
+{
+    cassert_no_null(data);
+    if (data->scale == ekGUI_SCALE_AUTO && data->image != NULL)
+    {
+        S2Df size;
+        size.width = (real32_t)image_width(data->image);
+        size.height = (real32_t)image_height(data->image);
+        view_size(cast(view, View), size);
+    }
+    else
+    {
+        view_size(cast(view, View), data->size);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 ImageView *imageview_create(void)
 {
     VImgData *data = heap_new0(VImgData);
-    S2Df size = {64.f, 64.f};
     View *view = NULL;
     data->frame = UINT32_MAX;
     data->scale = ekGUI_SCALE_NONE;
+    data->size = s2df(64.f, 64.f);
     view = view_create();
+    i_apply_size(cast(view, ImageView), data);
     view_data(view, &data, i_destroy_data, VImgData);
-    _view_set_subtype(view, "ImageView");
-    view_size(view, size);
     view_OnDraw(view, listener(view, i_OnDraw, View));
     view_OnAcceptFocus(view, listener(view, i_OnAcceptFocus, View));
+    _view_set_subtype(view, "ImageView");
     _view_OnImage(view, (FPtr_set_image)imageview_image);
-    return (ImageView *)view;
+    return cast(view, ImageView);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void imageview_size(ImageView *view, S2Df size)
 {
-    view_size(cast(view, View), size);
+    VImgData *data = view_get_data(cast(view, View), VImgData);
+    cassert_no_null(data);
+    data->size = size;
+    i_apply_size(view, data);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -176,6 +198,7 @@ void imageview_scale(ImageView *view, const gui_scale_t scale)
     VImgData *data = view_get_data(cast(view, View), VImgData);
     cassert_no_null(data);
     data->scale = scale;
+    i_apply_size(view, data);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -222,17 +245,11 @@ void imageview_image(ImageView *view, const Image *image)
                 data->ftime = -1.;
                 _view_add_transition(cast(view, View), obj_listener(cast(view, View), i_OnAnimation, View));
             }
-
-            if (data->scale == ekGUI_SCALE_AUTO)
-            {
-                S2Df size;
-                size.width = (real32_t)image_width(data->image);
-                size.height = (real32_t)image_height(data->image);
-                view_size(cast(view, View), size);
-            }
         }
 
+        i_apply_size(view, data);
         view_update(cast(view, View));
+
         if (cell != NULL)
             _cell_update_image(cell, limage);
     }
@@ -275,55 +292,3 @@ void imageview_OnOverDraw(ImageView *view, Listener *listener)
     view_OnEnter(cast(view, View), listener(cast(view, View), i_OnEnter, View));
     view_OnExit(cast(view, View), listener(cast(view, View), i_OnExit, View));
 }
-
-/*---------------------------------------------------------------------------*/
-
-/*void imageview_frame(CView *view, const uint32_t frame);
-void imageview_frame(CView *view, const uint32_t frame)
-{
-    i_Data *data = NULL;
-    cassert_no_null(view);
-    data = view_data(view, i_Data);
-    cassert_no_null(data);
-    data->frame = frame;
-}*/
-
-/*---------------------------------------------------------------------------*/
-
-/*
-uint32_t imageview_get_frame(const CView *view);
-uint32_t imageview_get_frame(const CView *view)
-{
-    i_Data *data = NULL;
-    cassert_no_null(view);
-    data = view_data(view, i_Data);
-    cassert_no_null(data);
-    return data->frame;
-}*/
-
-/*---------------------------------------------------------------------------*/
-
-/*
-void imageview_animation(CView *view, const bool_t animation, Listener *listener);
-void imageview_animation(CView *view, const bool_t animation, Listener *listener)
-{
-    i_Data *data = NULL;
-    cassert_no_null(view);
-    data = view_data(view, i_Data);
-    cassert_no_null(data);
-    listener_update(&data->OnTransition, listener);
-    view_unregister_transition(view);
-
-    if (animation == TRUE)
-    {
-        uint32_t num_frames = 0;
-        num_frames = image_num_frames(data->image);
-        if (num_frames > 0)
-        {
-            if (data->frame == UINT32_MAX)
-                data->frame = 0;
-            data->frame_time_stamp = 0.;
-            view_register_transition(view, obj_listener(view, i_OnAnimation, CView));
-        }
-    }
-}*/
