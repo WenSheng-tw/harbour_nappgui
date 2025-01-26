@@ -25,6 +25,19 @@
 #include <sewer/bmem.h>
 #include <sewer/cassert.h>
 
+static color_t i_BGCOLOR = 0;
+static color_t i_SEL_COLOR = 0;
+static color_t i_MAIN_COLOR = 0;
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_global_init(void)
+{
+    i_BGCOLOR = color_rgb(225, 225, 0);
+    i_SEL_COLOR = kCOLOR_RED;
+    i_MAIN_COLOR = kCOLOR_BLACK;
+}
+
 /*---------------------------------------------------------------------------*/
 
 static void i_remove_cell(DCell *cell)
@@ -32,6 +45,8 @@ static void i_remove_cell(DCell *cell)
     cassert_no_null(cell);
     if (cell->sublayout != NULL)
         dlayout_destroy(&cell->sublayout);
+    if (cell->image != NULL)
+        image_destroy(&cell->image);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -138,6 +153,20 @@ void dlayout_add_layout(DLayout *layout, DLayout *sublayout, const uint32_t col,
     cassert_no_null(sublayout);
     cassert(cell->sublayout == NULL);
     cell->sublayout = sublayout;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    DCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    if (cell->image != NULL)
+        image_destroy(&cell->image);
+
+    /* TODO: Binarize image */
+    if (image != NULL)
+        cell->image = image_copy(image);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -509,8 +538,8 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
     dcell = arrst_all_const(dlayout->cells, DCell);
     cassert(ncols == flayout_ncols(flayout));
     cassert(nrows == flayout_nrows(flayout));
-    draw_line_color(ctx, kCOLOR_BLACK);
-    draw_fill_color(ctx, kCOLOR_BLACK);
+    draw_line_color(ctx, i_MAIN_COLOR);
+    draw_fill_color(ctx, i_MAIN_COLOR);
     draw_r2df(ctx, ekSTROKE, &dlayout->rect);
 
     for (j = 0; j < nrows; ++j)
@@ -520,6 +549,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             const FCell *fcell = flayout_ccell(flayout, i, j);
             Cell *gcell = layout_cell(cast(glayout, Layout), i, j);
             draw_r2df(ctx, ekSTROKE, &dcell->rect);
+
             switch (fcell->type)
             {
             case ekCELL_TYPE_EMPTY:
@@ -527,12 +557,11 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
 
             case ekCELL_TYPE_LABEL:
             {
-                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? kCOLOR_RED : kCOLOR_BLACK;
-                color_t bgcolor = color_rgb(225, 225, 0);
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 const Label *glabel = cell_label(gcell);
                 const Font *gfont = label_get_font(glabel);
                 draw_font(ctx, gfont);
-                draw_fill_color(ctx, bgcolor);
+                draw_fill_color(ctx, i_BGCOLOR);
                 draw_text_color(ctx, color);
                 draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
                 drawctrl_text(ctx, tc(fcell->widget.label->text), (int32_t)dcell->content_rect.pos.x, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
@@ -541,8 +570,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
 
             case ekCELL_TYPE_BUTTON:
             {
-                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? kCOLOR_RED : kCOLOR_BLACK;
-                color_t bgcolor = color_rgb(225, 225, 0);
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 const Button *gbutton = cell_button(gcell);
                 const Font *gfont = button_get_font(gbutton);
                 real32_t twidth, theight;
@@ -550,11 +578,11 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_font(ctx, gfont);
                 draw_line_color(ctx, color);
                 draw_text_color(ctx, color);
-                draw_fill_color(ctx, bgcolor);
+                draw_fill_color(ctx, i_BGCOLOR);
                 draw_line_width(ctx, 3);
                 draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
                 draw_line_width(ctx, 1);
-                draw_line_color(ctx, kCOLOR_BLACK);
+                draw_line_color(ctx, i_MAIN_COLOR);
                 font_extents(gfont, tc(fcell->widget.button->text), -1.f, &twidth, &theight);
                 tx = dcell->content_rect.pos.x + ((dcell->content_rect.size.width - twidth) / 2);
                 ty = dcell->content_rect.pos.y + ((dcell->content_rect.size.height - theight) / 2);
@@ -564,8 +592,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
 
             case ekCELL_TYPE_CHECK:
             {
-                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? kCOLOR_RED : kCOLOR_BLACK;
-                color_t bgcolor = color_rgb(225, 225, 0);
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 const Button *gcheck = cell_button(gcell);
                 const Font *gfont = button_get_font(gcheck);
                 real32_t cwidth = (real32_t)drawctrl_check_width(ctx) - 2;
@@ -575,52 +602,51 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_font(ctx, gfont);
                 draw_line_color(ctx, color);
                 draw_text_color(ctx, color);
-                draw_fill_color(ctx, bgcolor);
+                draw_fill_color(ctx, i_BGCOLOR);
                 font_extents(gfont, tc(fcell->widget.check->text), -1.f, &twidth, &theight);
                 tx = dcell->content_rect.pos.x + (dcell->content_rect.size.width - twidth);
                 draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
                 drawctrl_text(ctx, tc(fcell->widget.check->text), (int32_t)tx, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
                 draw_rect(ctx, ekSTROKE, dcell->content_rect.pos.x, dcell->content_rect.pos.y, cwidth, cheight);
-                draw_line_color(ctx, kCOLOR_BLACK);
+                draw_line_color(ctx, i_MAIN_COLOR);
                 break;
             }
 
             case ekCELL_TYPE_EDIT:
             {
-                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? kCOLOR_RED : kCOLOR_BLACK;
-                color_t bgcolor = color_rgb(225, 225, 0);
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 real32_t pattern[2] = {1, 2};
                 draw_line_color(ctx, color);
-                draw_fill_color(ctx, bgcolor);
+                draw_fill_color(ctx, i_BGCOLOR);
                 draw_line_width(ctx, 2);
                 draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
                 draw_line_width(ctx, 1);
                 draw_line_dash(ctx, pattern, 2);
                 draw_rect(ctx, ekSTROKE, dcell->content_rect.pos.x + 5, dcell->content_rect.pos.y + 5, dcell->content_rect.size.width - 10, dcell->content_rect.size.height - 10);
                 draw_line_dash(ctx, NULL, 0);
-                draw_line_color(ctx, kCOLOR_BLACK);
+                draw_line_color(ctx, i_MAIN_COLOR);
                 break;
             }
 
             case ekCELL_TYPE_TEXT:
             {
-                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? kCOLOR_RED : kCOLOR_BLACK;
-                color_t bgcolor = color_rgb(225, 225, 0);
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 real32_t pattern[2] = {1, 2};
                 draw_line_color(ctx, color);
-                draw_fill_color(ctx, bgcolor);
+                draw_fill_color(ctx, i_BGCOLOR);
                 draw_line_width(ctx, 2);
                 draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
                 draw_line_width(ctx, 1);
                 draw_line_dash(ctx, pattern, 2);
                 draw_rect(ctx, ekSTROKE, dcell->content_rect.pos.x + 5, dcell->content_rect.pos.y + 5, dcell->content_rect.size.width - 10, dcell->content_rect.size.height - 10);
                 draw_line_dash(ctx, NULL, 0);
-                draw_line_color(ctx, kCOLOR_BLACK);
+                draw_line_color(ctx, i_MAIN_COLOR);
                 break;
             }
     
-			/* TODO: Draw the image */
 			case ekCELL_TYPE_IMAGE:
+                if (dcell->image != NULL)
+                    draw_image(ctx, dcell->image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
                 break;
 
 			case ekCELL_TYPE_LAYOUT:
@@ -631,6 +657,12 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             }
             }
 
+            //{
+            //    color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+            //    draw_line_color(ctx, color);
+            //    draw_r2df(ctx, ekSTROKE, &dcell->rect);
+            //}
+
             dcell += 1;
         }
     }
@@ -639,11 +671,11 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
     if (hover->dlayout == dlayout)
     {
         R2Df rect = i_get_rect(dlayout, hover);
-        draw_line_color(ctx, kCOLOR_RED);
+        draw_line_color(ctx, i_SEL_COLOR);
         if (hover->elem != ekLAYELEM_CELL)
         {
             draw_r2df(ctx, ekSTROKE, &rect);
-            draw_line_color(ctx, kCOLOR_BLACK);
+            draw_line_color(ctx, i_MAIN_COLOR);
         }
         else
         {
@@ -658,7 +690,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_image(ctx, add_icon, x, y);
             }
         }
-        draw_line_color(ctx, kCOLOR_BLACK);
+        draw_line_color(ctx, i_MAIN_COLOR);
     }
 
     /* This layout has the selected element */

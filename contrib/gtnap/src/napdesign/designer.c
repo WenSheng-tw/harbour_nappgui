@@ -877,6 +877,7 @@ static Designer *i_app(ResPack *pack)
     i_dbind();
     dialog_dbind();
     i_load_config(app);
+    dlayout_global_init();
     app->forms = arrpt_create(DForm);
     app->add_icon = image_copy(image_from_resource(pack, PLUS16_PNG));
     return app;

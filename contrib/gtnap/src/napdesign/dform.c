@@ -341,13 +341,13 @@ static void i_sel_remove_cell(const DSelect *sel)
 
 static void i_sel_synchro_cell(const DSelect *sel)
 {
-    const FCell *dcell = NULL;
+    const FCell *fcell = NULL;
     align_t halign = ENUM_MAX(align_t);
     align_t valign = ENUM_MAX(align_t);
     cassert_no_null(sel);
-    dcell = flayout_ccell(sel->flayout, sel->col, sel->row);
-    halign = i_halign(dcell->halign);
-    valign = i_valign(dcell->valign);
+    fcell = flayout_ccell(sel->flayout, sel->col, sel->row);
+    halign = i_halign(fcell->halign);
+    valign = i_valign(fcell->valign);
     layout_halign(sel->glayout, sel->col, sel->row, halign);
     layout_valign(sel->glayout, sel->col, sel->row, valign);
 }
@@ -526,26 +526,23 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 if (fimage != NULL)
                 {
                     ImageView *gimage = imageview_create();
-
-                    {
-                        String *path = str_printf("%s%s", folder_path, tc(fimage->path));
-                        Image *image = image_from_file(tc(path), NULL);
-                        imageview_scale(gimage, ekGUI_SCALE_AUTO);
-                        imageview_image(gimage, image);
-                        ptr_destopt(image_destroy, &image, Image);
-                        str_destroy(&path);
-                    }
-
+                    String *path = str_printf("%s%s", folder_path, tc(fimage->path));
+                    Image *image = image_from_file(tc(path), NULL);
+                    imageview_scale(gimage, ekGUI_SCALE_AUTO);
+                    imageview_image(gimage, image);
                     imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
                     i_sel_remove_cell(&sel);
                     flayout_add_image(sel.flayout, fimage, sel.col, sel.row);
                     layout_imageview(sel.glayout, gimage, sel.col, sel.row);
+                    dlayout_set_image(sel.dlayout, image, sel.col, sel.row);
                     i_sel_synchro_cell(&sel);
                     dform_compose(form);
                     propedit_set(propedit, form, &sel);
                     inspect_set(inspect, form);
                     form->sel = sel;
                     i_need_save(form);
+                    ptr_destopt(image_destroy, &image, Image);
+                    str_destroy(&path);
                     return TRUE;
                 }
                 else
