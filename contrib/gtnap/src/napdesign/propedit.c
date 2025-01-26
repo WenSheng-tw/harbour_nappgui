@@ -7,6 +7,7 @@
 #include <nflib/flayout.h>
 #include <gui/gui.h>
 #include <gui/cell.h>
+#include <gui/comwin.h>
 #include <gui/button.h>
 #include <gui/edit.h>
 #include <gui/label.h>
@@ -15,6 +16,7 @@
 #include <gui/popup.h>
 #include <gui/view.h>
 #include <gui/updown.h>
+#include <draw2d/image.h>
 #include <core/event.h>
 #include <core/heap.h>
 #include <core/strings.h>
@@ -45,6 +47,7 @@ struct _propdata_t
     Label *cell_geom_label;
     PopUp *column_popup;
     PopUp *row_popup;
+    Button *load_button;
 };
 
 /*---------------------------------------------------------------------------*/
@@ -610,29 +613,65 @@ static void i_OnImageNotify(PropData *data, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnLoadImage(PropData *data, Event *e)
+{
+    const char_t *imgpath = NULL;
+    const char_t *folder_path = NULL;
+    Window *window = NULL;
+    cassert_no_null(data);
+    unref(e);
+    folder_path = designer_folder_path(data->app);
+    window = designer_main_window(data->app);
+    imgpath = comwin_open_file(window, NULL, 0, folder_path);
+	if (imgpath != NULL)
+	{
+        Image *image = image_from_file(imgpath, NULL);
+        if (image != NULL)
+        {
+            String *relpath = str_relpath(ekLINUX, folder_path, imgpath); 
+            dform_synchro_cell_image(data->form, &data->sel, image, tc(relpath));
+            dlayout_set_image(data->sel.dlayout, image, data->sel.col, data->sel.row);
+            button_tooltip(data->load_button, tc(relpath));
+            dform_compose(data->form);
+            designer_canvas_update(data->app);
+            str_destroy(&relpath);
+            image_destroy(&image);
+        }
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_image_layout(PropData *data)
 {
     Layout *layout1 = layout_create(1, 3);
-    Layout *layout2 = layout_create(2, 3);
+    Layout *layout2 = layout_create(2, 4);
     Layout *layout3 = i_value_updown_layout();
     Layout *layout4 = i_value_updown_layout();
     PopUp *popup = popup_create();
+    Button *button = button_push();
     Label *label1 = label_create();
     Label *label2 = label_create();
     Label *label3 = label_create();
     Label *label4 = label_create();
+    Label *label5 = label_create();
     cassert_no_null(data);
     label_text(label1, "ImageView properties");
     label_text(label2, "MWidth");
     label_text(label3, "MHeight");
     label_text(label4, "Scale");
+    label_text(label5, "Image");
+    button_text(button, "Load");
+    button_OnClick(button, listener(data, i_OnLoadImage, PropData));
     layout_label(layout1, label1, 0, 0);
     layout_label(layout2, label2, 0, 0);
     layout_label(layout2, label3, 0, 1);
     layout_label(layout2, label4, 0, 2);
+    layout_label(layout2, label5, 0, 3);
     layout_layout(layout2, layout3, 1, 0);
     layout_layout(layout2, layout4, 1, 1);
     layout_popup(layout2, popup, 1, 2);
+    layout_button(layout2, button, 1, 3);
     layout_layout(layout1, layout2, 0, 1);
     layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
     layout_hmargin(layout2, 0, i_GRID_HMARGIN);
@@ -643,6 +682,7 @@ static Layout *i_image_layout(PropData *data)
     cell_dbind(layout_cell(layout2, 1, 2), FImage, scale_t, scale);
     layout_dbind(layout1, listener(data, i_OnImageNotify, PropData), FImage);
     data->image_layout = layout1;
+    data->load_button = button;
     return layout1;
 }
 
@@ -896,6 +936,7 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
 		{
             layout_dbind_obj(data->image_layout, cell->widget.image, FImage);
             panel_visible_layout(data->cell_panel, 7);
+            button_tooltip(data->load_button, tc(cell->widget.image->path));
 		}
         else
         {

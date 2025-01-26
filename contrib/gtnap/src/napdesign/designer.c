@@ -972,5 +972,13 @@ const char_t *designer_folder_path(const Designer *app)
 
 /*---------------------------------------------------------------------------*/
 
+Window *designer_main_window(const Designer *app)
+{
+    cassert_no_null(app);
+    return app->window;
+}
+
+/*---------------------------------------------------------------------------*/
+
 #include <osapp/osmain.h>
 osmain_sync(0.1, i_create, i_destroy, i_update, "", Designer)

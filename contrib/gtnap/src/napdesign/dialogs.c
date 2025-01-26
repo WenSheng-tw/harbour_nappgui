@@ -463,7 +463,7 @@ static void i_OnLoadImage(DialogData *data, Event *e)
         Image *image = image_from_file(imgpath, NULL);
         imageview_image(data->imgview, image);
         str_destroy(&data->fimage->path);
-        data->fimage->path = str_crelpath(data->path, imgpath);
+        data->fimage->path = str_relpath(ekLINUX, data->path, imgpath);
         image_destroy(&image);
         label_text(data->label, tc(data->fimage->path));
         window_update(data->window);

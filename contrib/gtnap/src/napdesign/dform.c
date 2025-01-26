@@ -731,6 +731,27 @@ void dform_synchro_cell_text(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_cell_image(DForm *form, const DSelect *sel, const Image *image, const char_t *imgname)
+{
+    FCell *cell = i_sel_fcell(sel);
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    i_need_save(form);
+    if (cell->type == ekCELL_TYPE_IMAGE)
+    {
+        ImageView *imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);
+        imageview_image(imgview, image);
+        str_upd(&cell->widget.image->path, imgname);
+    }
+    else
+    {
+        cassert(FALSE);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_button(DForm *form, const DSelect *sel)
 {
     FCell *cell = i_sel_fcell(sel);
