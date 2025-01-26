@@ -13,16 +13,19 @@
 #include <gui/edit.h>
 #include <gui/cell.h>
 #include <gui/drawctrl.inl>
-#include <geom2d/r2d.h>
-#include <geom2d/v2d.h>
 #include <draw2d/color.h>
+#include <draw2d/dctx.h>
 #include <draw2d/draw.h>
 #include <draw2d/drawg.h>
 #include <draw2d/font.h>
 #include <draw2d/image.h>
+#include <geom2d/r2d.h>
+#include <geom2d/v2d.h>
+#include <geom2d/t2d.h>
 #include <core/arrst.h>
 #include <core/heap.h>
 #include <core/strings.h>
+#include <sewer/bmath.h>
 #include <sewer/bmem.h>
 #include <sewer/cassert.h>
 
@@ -534,6 +537,49 @@ static bool_t i_is_cell_sel(const DSelect *sel, const DLayout *dlayout, const ui
 
 /*---------------------------------------------------------------------------*/
 
+static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const real32_t cell_width, const real32_t cell_height, const real32_t img_width, const real32_t img_height)
+{
+    real32_t ratio_x = 1.f;
+    real32_t ratio_y = 1.f;
+    switch(scale)
+    {
+    case ekSCALE_NONE:
+    case ekSCALE_FIT:
+        ratio_x = 1.f;
+        ratio_y = 1.f;
+        break;
+
+    case ekSCALE_AUTO:
+        ratio_x = cell_width / img_width;
+        ratio_y = cell_height / img_height;
+        break;
+
+    case ekSCALE_ASPECT:
+        ratio_x = cell_width / img_width;
+        ratio_y = cell_height / img_height;
+        if (ratio_x < ratio_y)
+            ratio_y = ratio_x;
+        else
+            ratio_x = ratio_y;
+        break;
+
+    cassert_default();
+    }
+
+    {
+        real32_t fimg_width = bmath_roundf(ratio_x * img_width);
+        real32_t fimg_height = bmath_roundf(ratio_y * img_height);
+        real32_t fx = bmath_floorf(.5f * (cell_width - fimg_width));
+        real32_t fy = bmath_floorf(.5f * (cell_height - fimg_height));
+        V2Df origin = v2df(-fx, -fy);
+        t2d_movef(t2d, kT2D_IDENTf, fx, fy);
+        t2d_scalef(t2d, t2d, ratio_x, ratio_y);
+        return origin;
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, DCtx *ctx)
 {
     uint32_t ncols, nrows, i, j;
@@ -656,8 +702,31 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             {
                 color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 const Image *image = i_is_cell_sel(hover, dlayout, i, j) ? dcell->simage : dcell->nimage;
+                
                 if (image != NULL)
-                    draw_image(ctx, image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                {
+                    T2Df t2d;
+                    V2Df origin;
+                    real32_t imgwidth = (real32_t)image_width(image);
+                    real32_t imgheight = (real32_t)image_height(image);
+                    origin = i_image_transform(&t2d, fcell->widget.image->scale, dcell->content_rect.size.width, dcell->content_rect.size.height, imgwidth, imgheight);
+                    if (origin.x > 1 || origin.y > 1)
+                    {
+                        /* TODO!!!!!!! Use 2D drawing context clipping when available */
+                        Image *clip = image_trim(image, (uint32_t)origin.x, (uint32_t)origin.y, (uint32_t)dcell->content_rect.size.width, (uint32_t)dcell->content_rect.size.height);
+                        t2d_movef(&t2d, &t2d, origin.x, origin.y);
+                        draw_matrixf(ctx, &t2d);
+                        draw_image(ctx, clip, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                        image_destroy(&clip);
+                    }
+                    else
+                    {
+                        draw_matrixf(ctx, &t2d);
+                        draw_image(ctx, image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                    }
+                    draw_matrixf(ctx, kT2D_IDENTf);
+                }
+
                 draw_line_color(ctx, color);
                 draw_line_width(ctx, 2);
                 draw_rect(ctx, ekSTROKE, dcell->content_rect.pos.x + 1, dcell->content_rect.pos.y + 1, dcell->content_rect.size.width, dcell->content_rect.size.height);
