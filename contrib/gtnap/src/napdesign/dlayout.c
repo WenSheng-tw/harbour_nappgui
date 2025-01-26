@@ -537,10 +537,11 @@ static bool_t i_is_cell_sel(const DSelect *sel, const DLayout *dlayout, const ui
 
 /*---------------------------------------------------------------------------*/
 
-static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const real32_t cell_width, const real32_t cell_height, const real32_t img_width, const real32_t img_height)
+static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const R2Df *cell_rect, const real32_t img_width, const real32_t img_height)
 {
     real32_t ratio_x = 1.f;
     real32_t ratio_y = 1.f;
+    cassert_no_null(cell_rect);
     switch(scale)
     {
     case ekSCALE_NONE:
@@ -550,13 +551,13 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const real32_t cel
         break;
 
     case ekSCALE_AUTO:
-        ratio_x = cell_width / img_width;
-        ratio_y = cell_height / img_height;
+        ratio_x = cell_rect->size.width / img_width;
+        ratio_y = cell_rect->size.height / img_height;
         break;
 
     case ekSCALE_ASPECT:
-        ratio_x = cell_width / img_width;
-        ratio_y = cell_height / img_height;
+        ratio_x = cell_rect->size.width / img_width;
+        ratio_y = cell_rect->size.height / img_height;
         if (ratio_x < ratio_y)
             ratio_y = ratio_x;
         else
@@ -569,10 +570,10 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const real32_t cel
     {
         real32_t fimg_width = bmath_roundf(ratio_x * img_width);
         real32_t fimg_height = bmath_roundf(ratio_y * img_height);
-        real32_t fx = bmath_floorf(.5f * (cell_width - fimg_width));
-        real32_t fy = bmath_floorf(.5f * (cell_height - fimg_height));
+        real32_t fx = bmath_floorf(.5f * (cell_rect->size.width - fimg_width));
+        real32_t fy = bmath_floorf(.5f * (cell_rect->size.height - fimg_height));
         V2Df origin = v2df(-fx, -fy);
-        t2d_movef(t2d, kT2D_IDENTf, fx, fy);
+        t2d_movef(t2d, kT2D_IDENTf, fx + cell_rect->pos.x, fy + cell_rect->pos.y);
         t2d_scalef(t2d, t2d, ratio_x, ratio_y);
         return origin;
     }
@@ -709,20 +710,20 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                     V2Df origin;
                     real32_t imgwidth = (real32_t)image_width(image);
                     real32_t imgheight = (real32_t)image_height(image);
-                    origin = i_image_transform(&t2d, fcell->widget.image->scale, dcell->content_rect.size.width, dcell->content_rect.size.height, imgwidth, imgheight);
+                    origin = i_image_transform(&t2d, fcell->widget.image->scale, &dcell->content_rect, imgwidth, imgheight);
                     if (origin.x > 1 || origin.y > 1)
                     {
                         /* TODO!!!!!!! Use 2D drawing context clipping when available */
                         Image *clip = image_trim(image, (uint32_t)origin.x, (uint32_t)origin.y, (uint32_t)dcell->content_rect.size.width, (uint32_t)dcell->content_rect.size.height);
                         t2d_movef(&t2d, &t2d, origin.x, origin.y);
                         draw_matrixf(ctx, &t2d);
-                        draw_image(ctx, clip, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                        draw_image(ctx, clip, 0, 0);
                         image_destroy(&clip);
                     }
                     else
                     {
                         draw_matrixf(ctx, &t2d);
-                        draw_image(ctx, image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                        draw_image(ctx, image, 0, 0);
                     }
                     draw_matrixf(ctx, kT2D_IDENTf);
                 }
