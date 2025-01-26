@@ -545,7 +545,7 @@ static void i_OnTextNotify(PropData *data, Event *e)
         || evbind_modify(e, FText, real32_t, min_width) == TRUE
         || evbind_modify(e, FText, real32_t, min_height) == TRUE)
     {
-        dform_synchro_text(data->form, &data->sel);
+        dform_synchro_textview(data->form, &data->sel);
 
         if (evbind_modify(e, FText, real32_t, min_width) == TRUE
             || evbind_modify(e, FText, real32_t, min_height) == TRUE)
@@ -598,52 +598,49 @@ static void i_OnImageNotify(PropData *data, Event *e)
 {
     cassert_no_null(data);
     cassert(event_type(e) == ekGUI_EVENT_OBJCHANGE);
-    //if (evbind_modify(e, FText, bool_t, read_only) == TRUE
-    //    || evbind_modify(e, FText, real32_t, min_width) == TRUE
-    //    || evbind_modify(e, FText, real32_t, min_height) == TRUE)
-    //{
-    //    dform_synchro_text(data->form, &data->sel);
-
-    //    if (evbind_modify(e, FText, real32_t, min_width) == TRUE
-    //        || evbind_modify(e, FText, real32_t, min_height) == TRUE)
-    //    {
-    //        dform_compose(data->form);
-    //        designer_canvas_update(data->app);
-    //    }
-    //}
+    if (evbind_modify(e, FImage, scale_t, scale) == TRUE
+        || evbind_modify(e, FImage, real32_t, min_width) == TRUE
+        || evbind_modify(e, FImage, real32_t, min_height) == TRUE)
+    {
+        dform_synchro_imageview(data->form, &data->sel);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
 
 static Layout *i_image_layout(PropData *data)
 {
-    Layout *layout1 = layout_create(1, 4);
-    Layout *layout2 = layout_create(2, 2);
+    Layout *layout1 = layout_create(1, 3);
+    Layout *layout2 = layout_create(2, 3);
     Layout *layout3 = i_value_updown_layout();
     Layout *layout4 = i_value_updown_layout();
-    Button *button1 = button_check();
+    PopUp *popup = popup_create();
     Label *label1 = label_create();
     Label *label2 = label_create();
     Label *label3 = label_create();
+    Label *label4 = label_create();
     cassert_no_null(data);
     label_text(label1, "ImageView properties");
     label_text(label2, "MWidth");
     label_text(label3, "MHeight");
-    button_text(button1, "Read only");
+    label_text(label4, "Scale");
     layout_label(layout1, label1, 0, 0);
-    layout_button(layout1, button1, 0, 1);
     layout_label(layout2, label2, 0, 0);
     layout_label(layout2, label3, 0, 1);
+    layout_label(layout2, label4, 0, 2);
     layout_layout(layout2, layout3, 1, 0);
     layout_layout(layout2, layout4, 1, 1);
-    layout_layout(layout1, layout2, 0, 2);
+    layout_popup(layout2, popup, 1, 2);
+    layout_layout(layout1, layout2, 0, 1);
     layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
     layout_hmargin(layout2, 0, i_GRID_HMARGIN);
     layout_hexpand(layout2, 1);
-    layout_vexpand(layout1, 3);
-    //cell_dbind(layout_cell(layout1, 0, 1), FText, bool_t, read_only);
+    layout_vexpand(layout1, 2);
     cell_dbind(layout_cell(layout2, 1, 0), FImage, real32_t, min_width);
     cell_dbind(layout_cell(layout2, 1, 1), FImage, real32_t, min_height);
+    cell_dbind(layout_cell(layout2, 1, 2), FImage, scale_t, scale);
     layout_dbind(layout1, listener(data, i_OnImageNotify, PropData), FImage);
     data->image_layout = layout1;
     return layout1;

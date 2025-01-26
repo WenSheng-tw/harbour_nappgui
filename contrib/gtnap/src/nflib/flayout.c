@@ -200,6 +200,7 @@ static FImage *i_read_image(Stream *stm)
 {
     FImage *image = heap_new0(FImage);
     image->path = str_read(stm);
+    image->scale = stm_read_enum(stm, scale_t);
     image->min_width = stm_read_r32(stm);
     image->min_height = stm_read_r32(stm);
     return image;
@@ -352,6 +353,7 @@ static void i_write_image(Stream *stm, const FImage *image)
 {
     cassert_no_null(image);
     str_write(stm, image->path);
+    stm_write_enum(stm, image->scale, scale_t);
     stm_write_r32(stm, image->min_width);
     stm_write_r32(stm, image->min_height);
 }

@@ -42,6 +42,10 @@ static void i_dbind(void)
     dbind_enum(valign_t, ekVALIGN_CENTER, "Center");
     dbind_enum(valign_t, ekVALIGN_BOTTOM, "Bottom");
     dbind_enum(valign_t, ekVALIGN_JUSTIFY, "Justify");
+    dbind_enum(scale_t, ekSCALE_NONE, "None");
+    dbind_enum(scale_t, ekSCALE_AUTO, "Auto");
+    dbind_enum(scale_t, ekSCALE_ASPECT, "Aspect");
+    dbind_enum(scale_t, ekSCALE_FIT, "Fit");
     dbind(FLabel, String *, text);
     dbind(FButton, String *, text);
     dbind(FButton, real32_t, min_width);
@@ -54,6 +58,7 @@ static void i_dbind(void)
     dbind(FText, real32_t, min_width);
     dbind(FText, real32_t, min_height);
     dbind(FImage, String*, path);
+    dbind(FImage, scale_t, scale);
     dbind(FImage, real32_t, min_width);
     dbind(FImage, real32_t, min_height);
     dbind(FColumn, real32_t, margin_right);
@@ -111,6 +116,7 @@ static void i_dbind(void)
     dbind_precision(FText, real32_t, min_height, 1);
     dbind_range(FText, real32_t, min_height, 10, 1000);
 
+	dbind_default(FImage, scale_t, scale, ekSCALE_ASPECT);
 	dbind_default(FImage, real32_t, min_width, 100);
     dbind_increment(FImage, real32_t, min_width, 1);
     dbind_precision(FImage, real32_t, min_width, 1);

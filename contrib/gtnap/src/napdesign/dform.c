@@ -329,6 +329,24 @@ static align_t i_valign(const valign_t valign)
 
 /*---------------------------------------------------------------------------*/
 
+static gui_scale_t i_scale(const scale_t scale)
+{
+    switch(scale) {
+    case ekSCALE_NONE:
+        return ekGUI_SCALE_NONE;
+    case ekSCALE_AUTO:
+        return ekGUI_SCALE_AUTO;
+    case ekSCALE_ASPECT:
+        return ekGUI_SCALE_ASPECT;
+    case ekSCALE_FIT:
+        return ekGUI_SCALE_ADJUST;
+    cassert_default();
+    }
+    return ekGUI_SCALE_ASPECT;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_sel_remove_cell(const DSelect *sel)
 {
     cassert_no_null(sel);
@@ -528,7 +546,7 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                     ImageView *gimage = imageview_create();
                     String *path = str_printf("%s%s", folder_path, tc(fimage->path));
                     Image *image = image_from_file(tc(path), NULL);
-                    imageview_scale(gimage, ekGUI_SCALE_AUTO);
+                    imageview_scale(gimage, i_scale(fimage->scale));
                     imageview_image(gimage, image);
                     imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
                     i_sel_remove_cell(&sel);
@@ -746,7 +764,7 @@ void dform_synchro_edit(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-void dform_synchro_text(DForm *form, const DSelect *sel)
+void dform_synchro_textview(DForm *form, const DSelect *sel)
 {
     FCell *cell = i_sel_fcell(sel);
     TextView *text = NULL;
@@ -762,7 +780,19 @@ void dform_synchro_text(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-//	ekCELL_TYPE_IMAGE
+void dform_synchro_imageview(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ImageView *imgview = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_IMAGE);
+    i_need_save(form);
+    imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);    
+    imageview_size(imgview, s2df(cell->widget.image->min_width, cell->widget.image->min_height));
+    imageview_scale(imgview, i_scale(cell->widget.image->scale));
+}
 
 /*---------------------------------------------------------------------------*/
 

@@ -60,39 +60,43 @@ static void i_image_transform(T2Df *t2d, const gui_scale_t scale, const real32_t
 {
     real32_t ratio_x = 1.f;
     real32_t ratio_y = 1.f;
-    if (scale != ekGUI_SCALE_NONE)
+    switch(scale)
     {
+    case ekGUI_SCALE_NONE:
+    case ekGUI_SCALE_ADJUST:
+        ratio_x = 1.f;
+        ratio_y = 1.f;
+        break;
+
+    case ekGUI_SCALE_AUTO:
         ratio_x = view_width / img_width;
         ratio_y = view_height / img_height;
+        break;
 
-        switch (scale)
+    case ekGUI_SCALE_ASPECT:
+        ratio_x = view_width / img_width;
+        ratio_y = view_height / img_height;
+        if (ratio_x < ratio_y)
+            ratio_y = ratio_x;
+        else
+            ratio_x = ratio_y;
+        break;
+
+    case ekGUI_SCALE_ASPECTDW:
+        ratio_x = view_width / img_width;
+        ratio_y = view_height / img_height;
+        if (ratio_x < ratio_y)
+            ratio_y = ratio_x;
+        else
+            ratio_x = ratio_y;
+
+        if (ratio_x > 1.f)
         {
-        case ekGUI_SCALE_AUTO:
-            break;
-
-        case ekGUI_SCALE_ASPECTDW:
-            if (ratio_x < ratio_y)
-                ratio_y = ratio_x;
-            else
-                ratio_x = ratio_y;
-
-            if (ratio_x > 1.f)
-            {
-                ratio_x = 1.f;
-                ratio_y = 1.f;
-            }
-            break;
-
-        case ekGUI_SCALE_ASPECT:
-            if (ratio_x < ratio_y)
-                ratio_y = ratio_x;
-            else
-                ratio_x = ratio_y;
-            break;
-
-        case ekGUI_SCALE_NONE:
-            cassert_default();
+            ratio_x = 1.f;
+            ratio_y = 1.f;
         }
+        break;
+    cassert_default();
     }
 
     {
@@ -149,7 +153,7 @@ static void i_OnAcceptFocus(View *view, Event *e)
 static void i_apply_size(ImageView *view, VImgData *data)
 {
     cassert_no_null(data);
-    if (data->scale == ekGUI_SCALE_AUTO && data->image != NULL)
+    if (data->scale == ekGUI_SCALE_ADJUST && data->image != NULL)
     {
         S2Df size;
         size.width = (real32_t)image_width(data->image);

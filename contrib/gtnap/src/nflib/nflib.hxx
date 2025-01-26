@@ -50,6 +50,15 @@ typedef enum _valign_t
     ekVALIGN_JUSTIFY
 } valign_t;
 
+/* Don't change the order. Add new values to end */
+typedef enum _scale_t
+{
+    ekSCALE_NONE,
+    ekSCALE_AUTO,
+    ekSCALE_ASPECT,
+    ekSCALE_FIT
+} scale_t;
+
 struct _flabel_t
 {
     String *text;
@@ -84,6 +93,7 @@ struct _ftext_t
 struct _fimage_t
 {
     String *path;
+    scale_t scale;
 	real32_t min_width;
     real32_t min_height;
 };
