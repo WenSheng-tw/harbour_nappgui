@@ -5041,7 +5041,7 @@ uint32_t hb_gtnap_form_modal(GtNapForm *form)
     cassert_no_null(mwin);
     if (form->window == NULL)
     {
-        form->window = nform_window(form->form, ekWINDOW_STD | ekWINDOW_RETURN | ekWINDOW_ESC);
+        form->window = nform_window(form->form, ekWINDOW_STD | ekWINDOW_RETURN | ekWINDOW_ESC, NULL);
         window_title(form->window, tc(form->title));
         i_map_bind_to_form(form->form, form->binds);
     }

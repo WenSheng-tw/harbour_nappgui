@@ -1,13 +1,17 @@
 /* NAppGUI forms common base */
 
 #include "nflib.h"
+#include "nflib_res.h"
 #include <gui/gui.h>
+#include <draw2d/image.h>
 #include <core/dbind.h>
+#include <core/respack.h>
 #include <osbs/log.h>
 #include <sewer/blib.h>
 #include <sewer/cassert.h>
 
 static uint32_t i_NUM_USERS = 0;
+static ResPack *i_RESPACK = NULL;
 
 /*---------------------------------------------------------------------------*/
 
@@ -28,6 +32,7 @@ static void i_dbind(void)
     dbind_enum(celltype_t, ekCELL_TYPE_CHECK, "");
     dbind_enum(celltype_t, ekCELL_TYPE_EDIT, "");
     dbind_enum(celltype_t, ekCELL_TYPE_TEXT, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_IMAGE, "");
     dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");
     dbind_enum(halign_t, ekHALIGN_LEFT, "Left");
     dbind_enum(halign_t, ekHALIGN_CENTER, "Center");
@@ -37,6 +42,10 @@ static void i_dbind(void)
     dbind_enum(valign_t, ekVALIGN_CENTER, "Center");
     dbind_enum(valign_t, ekVALIGN_BOTTOM, "Bottom");
     dbind_enum(valign_t, ekVALIGN_JUSTIFY, "Justify");
+    dbind_enum(scale_t, ekSCALE_NONE, "None");
+    dbind_enum(scale_t, ekSCALE_AUTO, "Auto");
+    dbind_enum(scale_t, ekSCALE_ASPECT, "Aspect");
+    dbind_enum(scale_t, ekSCALE_FIT, "Fit");
     dbind(FLabel, String *, text);
     dbind(FButton, String *, text);
     dbind(FButton, real32_t, min_width);
@@ -48,6 +57,10 @@ static void i_dbind(void)
     dbind(FText, bool_t, read_only);
     dbind(FText, real32_t, min_width);
     dbind(FText, real32_t, min_height);
+    dbind(FImage, String*, path);
+    dbind(FImage, scale_t, scale);
+    dbind(FImage, real32_t, min_width);
+    dbind(FImage, real32_t, min_height);
     dbind(FColumn, real32_t, margin_right);
     dbind(FColumn, real32_t, forced_width);
     dbind(FRow, real32_t, margin_bottom);
@@ -103,6 +116,16 @@ static void i_dbind(void)
     dbind_precision(FText, real32_t, min_height, 1);
     dbind_range(FText, real32_t, min_height, 10, 1000);
 
+	dbind_default(FImage, scale_t, scale, ekSCALE_ASPECT);
+	dbind_default(FImage, real32_t, min_width, 100);
+    dbind_increment(FImage, real32_t, min_width, 1);
+    dbind_precision(FImage, real32_t, min_width, 1);
+    dbind_range(FImage, real32_t, min_width, 10, 1000);
+    dbind_default(FImage, real32_t, min_height, 100);
+    dbind_increment(FImage, real32_t, min_height, 1);
+    dbind_precision(FImage, real32_t, min_height, 1);
+    dbind_range(FImage, real32_t, min_height, 10, 1000);
+
     dbind_default(FCell, celltype_t, type, ekCELL_TYPE_EMPTY);
     dbind_default(FCell, halign_t, halign, ekHALIGN_LEFT);
     dbind_default(FCell, valign_t, valign, ekVALIGN_TOP);
@@ -129,6 +152,8 @@ static void i_dbind(void)
     dbind(FWidget, FButton *, button);
     dbind(FWidget, FCheck *, check);
     dbind(FWidget, FEdit *, edit);
+    dbind(FWidget, FText *, text);
+    dbind(FWidget, FImage *, image);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
 }
@@ -154,9 +179,21 @@ void nflib_finish(void)
     cassert(i_NUM_USERS > 0);
     if (i_NUM_USERS == 1)
     {
+        if (i_RESPACK != NULL)
+            respack_destroy(&i_RESPACK);
+
         /* Unregister types (when dbind support it) */
         gui_finish();
     }
 
     i_NUM_USERS -= 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+const Image* nflib_default_image(void)
+{
+    if (i_RESPACK == NULL)
+        i_RESPACK = nflib_res_respack("");
+	return image_from_resource(i_RESPACK, NOIMAGE_PNG);
 }

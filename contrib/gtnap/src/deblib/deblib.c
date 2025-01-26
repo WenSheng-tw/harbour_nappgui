@@ -319,7 +319,10 @@ const char_t *deblib_msg_str(const msg_type_t msg)
         return "ekMSG_READ_KEY";
     case ekMSG_CLOSE:
         return "ekMSG_CLOSE";
-    cassert_default();
+    case ekMSG_SHOW:
+    case ekMSG_GET_POS:
+        break;
+        cassert_default();
     }
 
     return "";

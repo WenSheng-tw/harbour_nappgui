@@ -1,16 +1,20 @@
 /* Dialog boxes */
 
 #include "dialogs.h"
+#include <nflib/nflib.h>
 #include <nflib/flayout.h>
 #include <gui/button.h>
 #include <gui/cell.h>
+#include <gui/comwin.h>
 #include <gui/edit.h>
 #include <gui/label.h>
 #include <gui/layout.h>
+#include <gui/imageview.h>
 #include <gui/panel.h>
 #include <gui/popup.h>
 #include <gui/updown.h>
 #include <gui/window.h>
+#include <draw2d/image.h>
 #include <core/dbind.h>
 #include <core/event.h>
 #include <core/strings.h>
@@ -27,7 +31,11 @@ struct _dialoglayout_t
 
 struct _dialogdata_t
 {
+    const char_t *path;
+    FImage *fimage;
     Button *defbutton;
+    Label *label;
+    ImageView *imgview;
     Window *window;
     Edit *edit;
 };
@@ -440,6 +448,108 @@ FText *dialog_new_text(Window *parent, const DSelect *sel)
     window_destroy(&window);
     str_destroy(&caption);
     return ftext;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnLoadImage(DialogData *data, Event *e)
+{
+    const char_t *imgpath = NULL;
+    cassert_no_null(data);
+    cassert_no_null(data->fimage);
+    imgpath = comwin_open_file(data->window, NULL, 0, data->path);
+	if (imgpath != NULL)
+	{
+        Image *image = image_from_file(imgpath, NULL);
+        imageview_image(data->imgview, image);
+        str_destroy(&data->fimage->path);
+        data->fimage->path = str_relpath(ekLINUX, data->path, imgpath);
+        image_destroy(&image);
+        label_text(data->label, tc(data->fimage->path));
+        window_update(data->window);
+	}
+    unref(e);
+}
+    
+/*---------------------------------------------------------------------------*/
+
+static Layout *i_image_layout(DialogData *data)
+{
+    Layout *layout = layout_create(1, 3);
+    ImageView *view = imageview_create();
+    Label *label = label_create();
+    Button *button = button_push();
+    const Image *image = nflib_default_image();
+    cassert_no_null(data);
+    imageview_image(view, image);
+    imageview_scale(view, ekGUI_SCALE_ASPECT);
+    label_text(label, "default");
+    button_text(button, "Load image");
+    button_OnClick(button, listener(data, i_OnLoadImage, DialogData));
+    label_align(label, ekCENTER);
+    layout_imageview(layout, view, 0, 0);
+    layout_label(layout, label, 0, 1);
+    layout_button(layout, button, 0, 2);
+    layout_halign(layout, 0, 1, ekJUSTIFY);
+    data->label = label;
+    data->imgview = view;
+    return layout;
+}
+    
+/*---------------------------------------------------------------------------*/
+
+FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folder_path)
+{
+    DialogData data;
+    Layout *layout1 = layout_create(1, 4);
+    Layout *layout2 = layout_create(2, 2);
+    Layout *layout3 = i_value_updown_layout();
+    Layout *layout4 = i_value_updown_layout();
+    Layout *layout5 = i_image_layout(&data);
+    Layout *layout6 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    Label *label3 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FImage *fimage = dbind_create(FImage);
+    uint32_t ret = 0;
+    data.path = folder_path;
+    data.fimage = fimage;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New ImageView widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    label_text(label2, "Min width");
+    label_text(label3, "Min height");
+    layout_label(layout1, label1, 0, 0);
+    layout_label(layout2, label2, 0, 0);
+    layout_label(layout2, label3, 0, 1);
+    layout_layout(layout2, layout3, 1, 0);
+    layout_layout(layout2, layout4, 1, 1);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_layout(layout1, layout5, 0, 2);
+    layout_layout(layout1, layout6, 0, 3);
+    layout_vmargin(layout1, 0, 5);
+    layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    cell_dbind(layout_cell(layout2, 1, 0), FImage, real32_t, min_width);
+    cell_dbind(layout_cell(layout2, 1, 1), FImage, real32_t, min_height);
+    layout_dbind(layout1, NULL, FImage);
+    layout_dbind_obj(layout1, fimage, FImage);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&fimage, FImage);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    return fimage;
 }
 
 /*---------------------------------------------------------------------------*/

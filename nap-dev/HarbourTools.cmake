@@ -41,7 +41,7 @@ execute_process(
                 ${HBMK2_COMMAND}
                 "-debug"
                 "-comp=${HBMK2_COMPILER}"
-                "-keepc"
+                "-inc"
                 "-workdir=${destCPath}"
                 "-o${CMAKE_BINARY_DIR}/${prjName}"
                 ${hbpFullPath}

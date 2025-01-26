@@ -21,7 +21,8 @@ typedef enum _widget_t
     ekWIDGET_BUTTON,
     ekWIDGET_CHECKBOX,
     ekWIDGET_EDITBOX,
-    ekWIDGET_TEXTVIEW
+    ekWIDGET_TEXTVIEW,
+	ekWIDGET_IMAGEVIEW
 } widget_t;
 
 typedef enum _layelem_t
@@ -50,6 +51,8 @@ struct _drow_t
 struct _dcell_t
 {
     DLayout *sublayout;
+    Image *nimage;
+    Image *simage;
     R2Df rect;
     R2Df content_rect;
 };

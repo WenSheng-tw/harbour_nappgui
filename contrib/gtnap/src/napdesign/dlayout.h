@@ -2,6 +2,8 @@
 
 #include "designer.hxx"
 
+void dlayout_global_init(void);
+
 DLayout *dlayout_from_flayout(const FLayout *flayout);
 
 void dlayout_destroy(DLayout **layout);
@@ -17,6 +19,8 @@ void dlayout_remove_row(DLayout *layout, const uint32_t row);
 void dlayout_remove_cell(DLayout *layout, const uint32_t col, const uint32_t row);
 
 void dlayout_add_layout(DLayout *layout, DLayout *sublayout, const uint32_t col, const uint32_t row);
+
+void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row);
 
 void dlayout_synchro_visual(DLayout *dlayout, const Layout *glayout, const V2Df origin);
 

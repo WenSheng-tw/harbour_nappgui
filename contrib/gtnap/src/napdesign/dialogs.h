@@ -16,6 +16,8 @@ FEdit *dialog_new_edit(Window *parent, const DSelect *sel);
 
 FText *dialog_new_text(Window *parent, const DSelect *sel);
 
+FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folder_path);
+
 FLayout *dialog_new_layout(Window *parent, const DSelect *sel);
 
 uint8_t dialog_unsaved_changes(Window *parent);

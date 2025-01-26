@@ -64,13 +64,13 @@ void nform_destroy(NForm **form)
 
 /*---------------------------------------------------------------------------*/
 
-Window *nform_window(const NForm *form, const uint32_t flags)
+Window *nform_window(const NForm *form, const uint32_t flags, const char_t *resource_path)
 {
     Layout *layout = NULL;
     Panel *panel = NULL;
     Window *window = NULL;
     cassert_no_null(form);
-    layout = flayout_to_gui(form->flayout, 40.f, 20.f);
+    layout = flayout_to_gui(form->flayout, resource_path, 40.f, 20.f);
     panel = panel_create();
     window = window_create(flags);
     panel_layout(panel, layout);

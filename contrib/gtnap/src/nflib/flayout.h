@@ -46,6 +46,8 @@ _nflib_api void flayout_add_edit(FLayout *layout, FEdit *edit, const uint32_t co
 
 _nflib_api void flayout_add_text(FLayout *layout, FText *text, const uint32_t col, const uint32_t row);
 
+_nflib_api void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const uint32_t row);
+
 _nflib_api uint32_t flayout_ncols(const FLayout *layout);
 
 _nflib_api uint32_t flayout_nrows(const FLayout *layout);
@@ -58,7 +60,7 @@ _nflib_api FCell *flayout_cell(FLayout *layout, const uint32_t col, const uint32
 
 _nflib_api const FCell *flayout_ccell(const FLayout *layout, const uint32_t col, const uint32_t row);
 
-_nflib_api Layout *flayout_to_gui(const FLayout *layout, const real32_t empty_width, const real32_t empty_height);
+_nflib_api Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const real32_t empty_width, const real32_t empty_height);
 
 _nflib_api GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout, const char_t *cell_name);
 

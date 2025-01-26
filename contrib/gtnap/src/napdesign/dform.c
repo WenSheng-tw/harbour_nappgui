@@ -12,12 +12,14 @@
 #include <gui/button.h>
 #include <gui/edit.h>
 #include <gui/label.h>
+#include <gui/imageview.h>
 #include <gui/textview.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
 #include <gui/panel.h>
 #include <gui/panel.inl>
 #include <gui/window.h>
+#include <draw2d/image.h>
 #include <geom2d/v2d.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
@@ -27,6 +29,7 @@
 #include <core/strings.h>
 #include <sewer/bstd.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 struct _dform_t
 {
@@ -203,10 +206,11 @@ void dform_compose(DForm *form)
     if (form->glayout == NULL)
     {
         Panel *panel = panel_create();
+        const char_t *resource_path = designer_folder_path(form->app);
         cassert(form->window == NULL);
         cassert(form->dlayout == NULL);
         form->dlayout = dlayout_from_flayout(form->flayout);
-        form->glayout = flayout_to_gui(form->flayout, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
+        form->glayout = flayout_to_gui(form->flayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
         panel_layout(panel, form->glayout);
         form->window = window_create(ekWINDOW_STD);
         window_panel(form->window, panel);
@@ -325,6 +329,24 @@ static align_t i_valign(const valign_t valign)
 
 /*---------------------------------------------------------------------------*/
 
+static gui_scale_t i_scale(const scale_t scale)
+{
+    switch(scale) {
+    case ekSCALE_NONE:
+        return ekGUI_SCALE_NONE;
+    case ekSCALE_AUTO:
+        return ekGUI_SCALE_AUTO;
+    case ekSCALE_ASPECT:
+        return ekGUI_SCALE_ASPECT;
+    case ekSCALE_FIT:
+        return ekGUI_SCALE_ADJUST;
+    cassert_default();
+    }
+    return ekGUI_SCALE_ASPECT;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_sel_remove_cell(const DSelect *sel)
 {
     cassert_no_null(sel);
@@ -337,13 +359,13 @@ static void i_sel_remove_cell(const DSelect *sel)
 
 static void i_sel_synchro_cell(const DSelect *sel)
 {
-    const FCell *dcell = NULL;
+    const FCell *fcell = NULL;
     align_t halign = ENUM_MAX(align_t);
     align_t valign = ENUM_MAX(align_t);
     cassert_no_null(sel);
-    dcell = flayout_ccell(sel->flayout, sel->col, sel->row);
-    halign = i_halign(dcell->halign);
-    valign = i_valign(dcell->valign);
+    fcell = flayout_ccell(sel->flayout, sel->col, sel->row);
+    halign = i_halign(fcell->halign);
+    valign = i_valign(fcell->valign);
     layout_halign(sel->glayout, sel->col, sel->row, halign);
     layout_valign(sel->glayout, sel->col, sel->row, valign);
 }
@@ -515,13 +537,46 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 }
             }
             
-            case ekWIDGET_GRID_LAYOUT:
+			case ekWIDGET_IMAGEVIEW:
+			{
+                const char_t *folder_path = designer_folder_path(form->app);
+				FImage *fimage = dialog_new_image(window, &sel, folder_path);
+                if (fimage != NULL)
+                {
+                    ImageView *gimage = imageview_create();
+                    String *path = str_printf("%s%s", folder_path, tc(fimage->path));
+                    Image *image = image_from_file(tc(path), NULL);
+                    imageview_scale(gimage, i_scale(fimage->scale));
+                    imageview_image(gimage, image);
+                    imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
+                    i_sel_remove_cell(&sel);
+                    flayout_add_image(sel.flayout, fimage, sel.col, sel.row);
+                    layout_imageview(sel.glayout, gimage, sel.col, sel.row);
+                    dlayout_set_image(sel.dlayout, image, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    ptr_destopt(image_destroy, &image, Image);
+                    str_destroy(&path);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+			}
+
+			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
                 if (fsublayout != NULL)
                 {
+                    const char_t *resource_path = designer_folder_path(form->app);
                     DLayout *dsublayout = dlayout_from_flayout(fsublayout);
-                    Layout *gsublayout = flayout_to_gui(fsublayout, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
+                    Layout *gsublayout = flayout_to_gui(fsublayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
                     i_layout_obj_names(form, fsublayout);
                     i_sel_remove_cell(&sel);
                     dlayout_add_layout(sel.dlayout, dsublayout, sel.col, sel.row);
@@ -676,6 +731,27 @@ void dform_synchro_cell_text(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_cell_image(DForm *form, const DSelect *sel, const Image *image, const char_t *imgname)
+{
+    FCell *cell = i_sel_fcell(sel);
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    i_need_save(form);
+    if (cell->type == ekCELL_TYPE_IMAGE)
+    {
+        ImageView *imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);
+        imageview_image(imgview, image);
+        str_upd(&cell->widget.image->path, imgname);
+    }
+    else
+    {
+        cassert(FALSE);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_button(DForm *form, const DSelect *sel)
 {
     FCell *cell = i_sel_fcell(sel);
@@ -709,7 +785,7 @@ void dform_synchro_edit(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-void dform_synchro_text(DForm *form, const DSelect *sel)
+void dform_synchro_textview(DForm *form, const DSelect *sel)
 {
     FCell *cell = i_sel_fcell(sel);
     TextView *text = NULL;
@@ -721,6 +797,22 @@ void dform_synchro_text(DForm *form, const DSelect *sel)
     text = layout_get_textview(sel->glayout, sel->col, sel->row);
     textview_editable(text, !cell->widget.text->read_only);
     textview_size(text, s2df(cell->widget.text->min_width, cell->widget.text->min_height));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_imageview(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ImageView *imgview = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_IMAGE);
+    i_need_save(form);
+    imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);    
+    imageview_size(imgview, s2df(cell->widget.image->min_width, cell->widget.image->min_height));
+    imageview_scale(imgview, i_scale(cell->widget.image->scale));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -890,6 +982,8 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "EditBoxCell";
             case ekCELL_TYPE_TEXT:
                 return "TextViewCell";
+            case ekCELL_TYPE_IMAGE:
+                return "ImageViewCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();

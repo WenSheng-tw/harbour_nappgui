@@ -8,4 +8,6 @@ _nflib_api void nflib_start(void);
 
 _nflib_api void nflib_finish(void);
 
+_nflib_api const Image *nflib_default_image(void);
+
 __END_C

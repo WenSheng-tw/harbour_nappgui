@@ -1,6 +1,7 @@
 /* Form layout */
 
 #include "flayout.h"
+#include "nflib.h"
 #include <gui/button.h>
 #include <gui/buttonh.h>
 #include <gui/cell.h>
@@ -10,6 +11,8 @@
 #include <gui/layouth.h>
 #include <gui/edit.h>
 #include <gui/textview.h>
+#include <gui/imageview.h>
+#include <draw2d/image.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
 #include <core/dbind.h>
@@ -59,6 +62,9 @@ static void i_remove_cell(FCell *cell)
         break;
     case ekCELL_TYPE_TEXT:
         dbind_destroy(&cell->widget.text, FText);
+        break;
+    case ekCELL_TYPE_IMAGE:
+        dbind_destroy(&cell->widget.image, FImage);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_destroy(&cell->widget.layout);
@@ -190,6 +196,18 @@ static FText *i_read_text(Stream *stm)
 
 /*---------------------------------------------------------------------------*/
 
+static FImage *i_read_image(Stream *stm)
+{
+    FImage *image = heap_new0(FImage);
+    image->path = str_read(stm);
+    image->scale = stm_read_enum(stm, scale_t);
+    image->min_width = stm_read_r32(stm);
+    image->min_height = stm_read_r32(stm);
+    return image;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
@@ -216,7 +234,10 @@ static void i_read_cell(Stream *stm, FCell *cell)
     case ekCELL_TYPE_TEXT:
         cell->widget.text = i_read_text(stm);
         break;
-    case ekCELL_TYPE_LAYOUT:
+    case ekCELL_TYPE_IMAGE:
+        cell->widget.image = i_read_image(stm);
+        break;
+	case ekCELL_TYPE_LAYOUT:
         cell->widget.layout = flayout_read(stm);
         break;
         cassert_default();
@@ -328,6 +349,17 @@ static void i_write_text(Stream *stm, const FText *text)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_write_image(Stream *stm, const FImage *image)
+{
+    cassert_no_null(image);
+    str_write(stm, image->path);
+    stm_write_enum(stm, image->scale, scale_t);
+    stm_write_r32(stm, image->min_width);
+    stm_write_r32(stm, image->min_height);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_write_cell(Stream *stm, const FCell *cell)
 {
     cassert_no_null(cell);
@@ -353,6 +385,9 @@ static void i_write_cell(Stream *stm, const FCell *cell)
         break;
     case ekCELL_TYPE_TEXT:
         i_write_text(stm, cell->widget.text);
+        break;
+    case ekCELL_TYPE_IMAGE:
+		i_write_image(stm, cell->widget.image);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_write(stm, cell->widget.layout);
@@ -635,6 +670,20 @@ void flayout_add_text(FLayout *layout, FText *text, const uint32_t col, const ui
 
 /*---------------------------------------------------------------------------*/
 
+void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(image);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_IMAGE;
+    cell->halign = ekHALIGN_CENTER;
+    cell->valign = ekHALIGN_CENTER;
+    cell->widget.image = image;
+}
+
+/*---------------------------------------------------------------------------*/
+
 uint32_t flayout_ncols(const FLayout *layout)
 {
     cassert_no_null(layout);
@@ -719,7 +768,7 @@ static align_t i_valign(const valign_t valign)
 
 /*---------------------------------------------------------------------------*/
 
-Layout *flayout_to_gui(const FLayout *layout, const real32_t empty_width, const real32_t empty_height)
+Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const real32_t empty_width, const real32_t empty_height)
 {
     uint32_t ncols = 0, nrows = 0;
     Layout *glayout = NULL;
@@ -825,9 +874,34 @@ Layout *flayout_to_gui(const FLayout *layout, const real32_t empty_width, const 
                     break;
                 }
 
-                case ekCELL_TYPE_LAYOUT:
+				case ekCELL_TYPE_IMAGE:
                 {
-                    Layout *gsublayout = flayout_to_gui(cells->widget.layout, empty_width, empty_height);
+                    FImage *fimage = cells->widget.image;
+                    ImageView *gimage = imageview_create();
+                    String *path = str_cpath("%s/%s", resource_path, tc(fimage->path));
+                    Image *image = image_from_file(tc(path), NULL);
+					
+					if (image != NULL)
+					{
+                        imageview_image(gimage, image);
+                        image_destroy(&image);
+					}
+					else
+					{
+                        /* Use a default image */
+                        const Image *rimage = nflib_default_image();
+                        imageview_image(gimage, rimage);
+					}
+
+					str_destroy(&path);
+                    imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
+                    layout_imageview(glayout, gimage, i, j);
+                    break;
+                }
+
+				case ekCELL_TYPE_LAYOUT:
+                {
+                    Layout *gsublayout = flayout_to_gui(cells->widget.layout, resource_path, empty_width, empty_height);
                     layout_layout(glayout, gsublayout, i, j);
                     break;
                 }
@@ -865,7 +939,8 @@ GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout
                 case ekCELL_TYPE_CHECK:
                 case ekCELL_TYPE_EDIT:
                 case ekCELL_TYPE_TEXT:
-                {
+                case ekCELL_TYPE_IMAGE:
+				{
                     Cell *gcell = layout_cell(gui_layout, i, j);
                     return cell_control(gcell);
                 }
