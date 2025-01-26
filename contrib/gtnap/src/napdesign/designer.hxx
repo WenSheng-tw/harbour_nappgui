@@ -51,7 +51,8 @@ struct _drow_t
 struct _dcell_t
 {
     DLayout *sublayout;
-    Image *image;
+    Image *nimage;
+    Image *simage;
     R2Df rect;
     R2Df content_rect;
 };

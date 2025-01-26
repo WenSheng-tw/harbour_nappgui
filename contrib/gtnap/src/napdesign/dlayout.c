@@ -1,6 +1,7 @@
 /* Designer layout */
 
 #include "dlayout.h"
+#include "imgproc.h"
 #include <nflib/flayout.h>
 #include <gui/button.h>
 #include <gui/button.h>
@@ -45,8 +46,10 @@ static void i_remove_cell(DCell *cell)
     cassert_no_null(cell);
     if (cell->sublayout != NULL)
         dlayout_destroy(&cell->sublayout);
-    if (cell->image != NULL)
-        image_destroy(&cell->image);
+    if (cell->nimage != NULL)
+        image_destroy(&cell->nimage);
+    if (cell->simage != NULL)
+        image_destroy(&cell->simage);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -161,12 +164,17 @@ void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, 
 {
     DCell *cell = i_cell(layout, col, row);
     cassert_no_null(cell);
-    if (cell->image != NULL)
-        image_destroy(&cell->image);
+    if (cell->nimage != NULL)
+        image_destroy(&cell->nimage);
 
-    /* TODO: Binarize image */
+    if (cell->simage != NULL)
+        image_destroy(&cell->simage);
+
     if (image != NULL)
-        cell->image = image_copy(image);
+    {
+        cell->nimage = imgproc_binarize(image, i_MAIN_COLOR, i_BGCOLOR);
+        cell->simage = imgproc_binarize(image, i_SEL_COLOR, i_BGCOLOR);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -645,9 +653,17 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             }
     
 			case ekCELL_TYPE_IMAGE:
-                if (dcell->image != NULL)
-                    draw_image(ctx, dcell->image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                const Image *image = i_is_cell_sel(hover, dlayout, i, j) ? dcell->simage : dcell->nimage;
+                if (image != NULL)
+                    draw_image(ctx, image, dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                draw_line_color(ctx, color);
+                draw_line_width(ctx, 2);
+                draw_rect(ctx, ekSTROKE, dcell->content_rect.pos.x + 1, dcell->content_rect.pos.y + 1, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_line_width(ctx, 1);
                 break;
+            }
 
 			case ekCELL_TYPE_LAYOUT:
             {
