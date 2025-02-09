@@ -630,7 +630,23 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_fill_color(ctx, i_BGCOLOR);
                 draw_text_color(ctx, color);
                 draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
-                drawctrl_text(ctx, tc(fcell->widget.label->text), (int32_t)dcell->content_rect.pos.x, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
+                
+                if (fcell->widget.label->min_width > 0)
+                    draw_text_width(ctx, fcell->widget.label->min_width);
+
+                if (fcell->widget.label->multiline == TRUE)
+                {
+                    draw_text(ctx, tc(fcell->widget.label->text), dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                }
+                else
+                {
+                    /* TODO: Clipping */
+                    drawctrl_text(ctx, tc(fcell->widget.label->text), (int32_t)dcell->content_rect.pos.x, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
+                }
+
+                if (fcell->widget.label->min_width > 0)
+                    draw_text_width(ctx, 0);
+
                 break;
             }
 

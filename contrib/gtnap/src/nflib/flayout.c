@@ -828,6 +828,24 @@ static align_t i_valign(const valign_t valign)
 
 /*---------------------------------------------------------------------------*/
 
+static gui_scale_t i_scale(const scale_t scale)
+{
+    switch(scale) {
+    case ekSCALE_NONE:
+        return ekGUI_SCALE_NONE;
+    case ekSCALE_AUTO:
+        return ekGUI_SCALE_AUTO;
+    case ekSCALE_ASPECT:
+        return ekGUI_SCALE_ASPECT;
+    case ekSCALE_FIT:
+        return ekGUI_SCALE_ADJUST;
+    cassert_default();
+    }
+    return ekGUI_SCALE_ASPECT;
+}
+
+/*---------------------------------------------------------------------------*/
+
 Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const real32_t empty_width, const real32_t empty_height)
 {
     uint32_t ncols = 0, nrows = 0;
@@ -943,21 +961,22 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     ImageView *gimage = imageview_create();
                     String *path = str_cpath("%s/%s", resource_path, tc(fimage->path));
                     Image *image = image_from_file(tc(path), NULL);
-					
-					if (image != NULL)
-					{
+
+                    if (image != NULL)
+                    {
                         imageview_image(gimage, image);
                         image_destroy(&image);
-					}
-					else
-					{
+                    }
+                    else
+                    {
                         /* Use a default image */
                         const Image *rimage = nflib_default_image();
                         imageview_image(gimage, rimage);
-					}
+                    }
 
-					str_destroy(&path);
+                    str_destroy(&path);
                     imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
+                    imageview_scale(gimage, i_scale(fimage->scale));
                     layout_imageview(glayout, gimage, i, j);
                     break;
                 }

@@ -225,6 +225,8 @@ void label_multiline(Label *label, const bool_t multiline)
     cassert_no_null(label);
     label->flags = multiline ? ekLABEL_MULTI : ekLABEL_SINGLE;
     label->component.context->func_label_set_flags(label->component.ositem, label->flags);
+    if (multiline == TRUE)
+        label->component.context->func_label_set_ellipsis(label->component.ositem, (enum_t)ekELLIPNONE);
 }
 
 /*---------------------------------------------------------------------------*/
