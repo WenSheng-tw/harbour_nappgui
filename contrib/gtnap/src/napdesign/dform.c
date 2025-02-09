@@ -603,6 +603,7 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 {
                     Progress *progress = progress_create();
                     progress_min_width(progress, fprogress->min_width);
+                    progress_value(progress, .5f);
                     i_sel_remove_cell(&sel);
                     flayout_add_progress(sel.flayout, fprogress, sel.col, sel.row);
                     layout_progress(sel.glayout, progress, sel.col, sel.row);
@@ -895,6 +896,7 @@ void dform_synchro_progress(DForm *form, const DSelect *sel)
     i_need_save(form);
     progress = layout_get_progress(sel->glayout, sel->col, sel->row);    
     progress_min_width(progress, cell->widget.progress->min_width);
+    progress_value(progress, .5f);
 }
 
 /*---------------------------------------------------------------------------*/

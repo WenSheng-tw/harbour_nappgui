@@ -42,6 +42,7 @@ struct _propdata_t
     Layout *text_layout;
     Layout *image_layout;
     Layout *slider_layout;
+    Layout *progress_layout;
     Cell *column_margin_cell;
     Cell *row_margin_cell;
     Label *layout_geom_label;
@@ -729,6 +730,46 @@ static Layout *i_slider_layout(PropData *data)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnProgressNotify(PropData *data, Event *e)
+{
+    cassert_no_null(data);
+    cassert(event_type(e) == ekGUI_EVENT_OBJCHANGE);
+    if (evbind_modify(e, FProgress, real32_t, min_width) == TRUE)
+    {
+        dform_synchro_progress(data->form, &data->sel);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static Layout *i_progress_layout(PropData *data)
+{
+    Layout *layout1 = layout_create(1, 3);
+    Layout *layout2 = layout_create(2, 1);
+    Layout *layout3 = i_value_updown_layout();
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    cassert_no_null(data);
+    label_text(label1, "Progress properties");
+    label_text(label2, "MWidth");
+    layout_label(layout1, label1, 0, 0);
+    layout_label(layout2, label2, 0, 0);
+    layout_layout(layout2, layout3, 1, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
+    layout_hmargin(layout2, 0, i_GRID_HMARGIN);
+    layout_hexpand(layout2, 1);
+    layout_vexpand(layout1, 2);
+    cell_dbind(layout_cell(layout2, 1, 0), FProgress, real32_t, min_width);
+    layout_dbind(layout1, listener(data, i_OnProgressNotify, PropData), FProgress);
+    data->progress_layout = layout1;
+    return layout1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_OnCellNotify(PropData *data, Event *e)
 {
     cassert_no_null(data);
@@ -803,6 +844,7 @@ static Panel *i_cell_content_panel(PropData *data)
     Layout *layout7 = i_text_layout(data);
     Layout *layout8 = i_image_layout(data);
     Layout *layout9 = i_slider_layout(data);
+    Layout *layout10 = i_progress_layout(data);
     Panel *panel = panel_create();
     cassert_no_null(data);
     panel_layout(panel, layout1);
@@ -814,6 +856,7 @@ static Panel *i_cell_content_panel(PropData *data)
     panel_layout(panel, layout7);
     panel_layout(panel, layout8);
     panel_layout(panel, layout9);
+    panel_layout(panel, layout10);
     panel_visible_layout(panel, 0);
     data->cell_panel = panel;
     return panel;
@@ -988,7 +1031,8 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         }  
         else if (cell->type == ekCELL_TYPE_PROGRESS)
         {
-            cassert(FALSE);
+            layout_dbind_obj(data->progress_layout, cell->widget.progress, FProgress);
+            panel_visible_layout(data->cell_panel, 9);
         }
         else
         {
