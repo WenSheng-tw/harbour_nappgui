@@ -147,7 +147,6 @@ void label_OnClick(Label *label, Listener *listener)
 void label_min_width(Label *label, const real32_t width)
 {
     cassert_no_null(label);
-    cassert(width > 0);
     label->width = width;
 }
 
@@ -282,7 +281,7 @@ void _label_dimension(Label *label, const uint32_t i, real32_t *dim0, real32_t *
     {
         real32_t width;
         label->component.context->func_label_bounds(label->component.ositem, tc(label->text), -1.f, &width, &label->height);
-        if (label->width >= 0)
+        if (label->width > 0)
             *dim0 = label->width;
         else
             *dim0 = width;

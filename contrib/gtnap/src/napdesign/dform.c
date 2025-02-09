@@ -423,6 +423,8 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                     Label *label = label_create();
                     label_text(label, tc(flabel->text));
                     label_multiline(label, flabel->multiline);
+                    label_min_width(label, flabel->min_width);
+                    label_align(label, i_halign(flabel->align));
                     i_sel_remove_cell(&sel);
                     flayout_add_label(sel.flayout, flabel, sel.col, sel.row);
                     layout_label(sel.glayout, label, sel.col, sel.row);
@@ -816,6 +818,23 @@ void dform_synchro_button(DForm *form, const DSelect *sel)
     i_need_save(form);
     button = layout_get_button(sel->glayout, sel->col, sel->row);
     button_min_width(button, cell->widget.button->min_width);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_label(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    Label *label = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LABEL);
+    i_need_save(form);
+    label = layout_get_label(sel->glayout, sel->col, sel->row);
+    label_multiline(label, cell->widget.label->multiline);
+    label_min_width(label, cell->widget.label->min_width);
+    label_align(label, i_halign(cell->widget.label->align));
 }
 
 /*---------------------------------------------------------------------------*/

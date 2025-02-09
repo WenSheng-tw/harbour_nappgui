@@ -359,6 +359,14 @@ static void i_OnLabelNotify(PropData *data, Event *e)
         dform_compose(data->form);
         designer_canvas_update(data->app);
     }
+    else if (evbind_modify(e, FLabel, bool_t, multiline) == TRUE 
+        || evbind_modify(e, FLabel, real32_t, min_width) == TRUE 
+        || evbind_modify(e, FLabel, halign_t, align) == TRUE)
+    {
+        dform_synchro_label(data->form, &data->sel);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -366,22 +374,40 @@ static void i_OnLabelNotify(PropData *data, Event *e)
 static Layout *i_label_layout(PropData *data)
 {
     Layout *layout1 = layout_create(1, 3);
-    Layout *layout2 = layout_create(2, 1);
+    Layout *layout2 = layout_create(2, 4);
+    Layout *layout3 = i_value_updown_layout();
     Label *label1 = label_create();
     Label *label2 = label_create();
+    Label *label3 = label_create();
+    Label *label4 = label_create();
+    Label *label5 = label_create();
     Edit *edit = edit_create();
+    Button *check = button_check();
+    PopUp *popup = popup_create();
     cassert_no_null(data);
     label_text(label1, "Label properties");
     label_text(label2, "Text");
+    label_text(label3, "Multiline");
+    label_text(label4, "MWidth");
+    label_text(label5, "Align");
     layout_label(layout1, label1, 0, 0);
     layout_label(layout2, label2, 0, 0);
+    layout_label(layout2, label3, 0, 1);
+    layout_label(layout2, label4, 0, 2);
+    layout_label(layout2, label5, 0, 3);
     layout_edit(layout2, edit, 1, 0);
+    layout_button(layout2, check, 1, 1);
+    layout_layout(layout2, layout3, 1, 2);
+    layout_popup(layout2, popup, 1, 3);
     layout_layout(layout1, layout2, 0, 1);
     layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
     layout_hmargin(layout2, 0, i_GRID_HMARGIN);
     layout_hexpand(layout2, 1);
     layout_vexpand(layout1, 2);
     cell_dbind(layout_cell(layout2, 1, 0), FLabel, String *, text);
+    cell_dbind(layout_cell(layout2, 1, 1), FLabel, bool_t, multiline);
+    cell_dbind(layout_cell(layout2, 1, 2), FLabel, real32_t, min_width);
+    cell_dbind(layout_cell(layout2, 1, 3), FLabel, halign_t, align);
     layout_dbind(layout1, listener(data, i_OnLabelNotify, PropData), FLabel);
     data->label_layout = layout1;
     return layout1;

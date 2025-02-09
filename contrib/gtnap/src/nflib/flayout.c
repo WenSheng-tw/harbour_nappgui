@@ -891,6 +891,8 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     Label *glabel = label_create();
                     label_text(glabel, tc(flabel->text));
                     label_multiline(glabel, flabel->multiline);
+                    label_min_width(glabel, flabel->min_width);
+                    label_align(glabel, i_halign(flabel->align));
                     layout_label(glayout, glabel, i, j);
                     break;
                 }

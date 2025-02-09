@@ -109,10 +109,10 @@ static void i_dbind(void)
     dbind_range(FButton, real32_t, min_width, 10, 1000);
     
     dbind_default(FLabel, bool_t, multiline, FALSE);
-    dbind_default(FLabel, real32_t, min_width, 100);
+    dbind_default(FLabel, real32_t, min_width, 0);
     dbind_increment(FLabel, real32_t, min_width, 1);
     dbind_precision(FLabel, real32_t, min_width, 1);
-    dbind_range(FLabel, real32_t, min_width, 10, 1000);
+    dbind_range(FLabel, real32_t, min_width, 0, 1000);
     dbind_default(FLabel, halign_t, align, ekHALIGN_LEFT);
 
     dbind_default(FEdit, real32_t, min_width, 100);
