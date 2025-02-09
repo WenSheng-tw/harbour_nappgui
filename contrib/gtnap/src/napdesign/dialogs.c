@@ -578,7 +578,7 @@ FSlider *dialog_new_slider(Window *parent, const DSelect *sel)
     //cell_dbind(layout_cell(layout1, 0, 2), FSlider, bool_t, autosel);
     //cell_dbind(layout_cell(layout2, 1, 0), FSlider, halign_t, text_align);
     //layout_dbind(layout1, NULL, FSlider);
-    layout_dbind_obj(layout1, fslider, FSlider);
+    //layout_dbind_obj(layout1, fslider, FSlider);
     window_panel(window, panel);
     window_defbutton(window, data.defbutton);
     i_center_window(parent, window);
