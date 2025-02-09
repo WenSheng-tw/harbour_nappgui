@@ -20,7 +20,8 @@
         "memory": "cpp",
         "dlabel.h": "c",
         "dialogs.h": "c",
-        "buttonh.h": "c"
+        "buttonh.h": "c",
+        "gui.h": "c"
     },
     "files.encoding": "windows1252",
     "cmake.sourceDirectory": "/home/fran/harbour_nappgui"

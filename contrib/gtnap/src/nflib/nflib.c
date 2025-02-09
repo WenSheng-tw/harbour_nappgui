@@ -33,7 +33,9 @@ static void i_dbind(void)
     dbind_enum(celltype_t, ekCELL_TYPE_EDIT, "");
     dbind_enum(celltype_t, ekCELL_TYPE_TEXT, "");
     dbind_enum(celltype_t, ekCELL_TYPE_IMAGE, "");
-    dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_SLIDER, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_PROGRESS, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");    
     dbind_enum(halign_t, ekHALIGN_LEFT, "Left");
     dbind_enum(halign_t, ekHALIGN_CENTER, "Center");
     dbind_enum(halign_t, ekHALIGN_RIGHT, "Right");
@@ -47,6 +49,9 @@ static void i_dbind(void)
     dbind_enum(scale_t, ekSCALE_ASPECT, "Aspect");
     dbind_enum(scale_t, ekSCALE_FIT, "Fit");
     dbind(FLabel, String *, text);
+    dbind(FLabel, bool_t, multiline);
+    dbind(FLabel, real32_t, min_width);
+    dbind(FLabel, halign_t, align);
     dbind(FButton, String *, text);
     dbind(FButton, real32_t, min_width);
     dbind(FCheck, String *, text);
@@ -61,6 +66,8 @@ static void i_dbind(void)
     dbind(FImage, scale_t, scale);
     dbind(FImage, real32_t, min_width);
     dbind(FImage, real32_t, min_height);
+    dbind(FSlider, real32_t, min_width);
+    dbind(FProgress, real32_t, min_width);
     dbind(FColumn, real32_t, margin_right);
     dbind(FColumn, real32_t, forced_width);
     dbind(FRow, real32_t, margin_bottom);
@@ -100,6 +107,13 @@ static void i_dbind(void)
     dbind_increment(FButton, real32_t, min_width, 1);
     dbind_precision(FButton, real32_t, min_width, 1);
     dbind_range(FButton, real32_t, min_width, 10, 1000);
+    
+    dbind_default(FLabel, bool_t, multiline, FALSE);
+    dbind_default(FLabel, real32_t, min_width, 0);
+    dbind_increment(FLabel, real32_t, min_width, 1);
+    dbind_precision(FLabel, real32_t, min_width, 1);
+    dbind_range(FLabel, real32_t, min_width, 0, 1000);
+    dbind_default(FLabel, halign_t, align, ekHALIGN_LEFT);
 
     dbind_default(FEdit, real32_t, min_width, 100);
     dbind_increment(FEdit, real32_t, min_width, 1);
@@ -125,6 +139,16 @@ static void i_dbind(void)
     dbind_increment(FImage, real32_t, min_height, 1);
     dbind_precision(FImage, real32_t, min_height, 1);
     dbind_range(FImage, real32_t, min_height, 10, 1000);
+
+	dbind_default(FSlider, real32_t, min_width, 100);
+    dbind_increment(FSlider, real32_t, min_width, 1);
+    dbind_precision(FSlider, real32_t, min_width, 1);
+    dbind_range(FSlider, real32_t, min_width, 10, 1000);
+
+    dbind_default(FProgress, real32_t, min_width, 100);
+    dbind_increment(FProgress, real32_t, min_width, 1);
+    dbind_precision(FProgress, real32_t, min_width, 1);
+    dbind_range(FProgress, real32_t, min_width, 10, 1000);
 
     dbind_default(FCell, celltype_t, type, ekCELL_TYPE_EMPTY);
     dbind_default(FCell, halign_t, halign, ekHALIGN_LEFT);
@@ -154,6 +178,8 @@ static void i_dbind(void)
     dbind(FWidget, FEdit *, edit);
     dbind(FWidget, FText *, text);
     dbind(FWidget, FImage *, image);
+    dbind(FWidget, FSlider *, slider);
+    dbind(FWidget, FProgress *, progress);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
 }

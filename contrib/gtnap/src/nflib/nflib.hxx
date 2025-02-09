@@ -12,6 +12,8 @@ typedef struct _fcheck_t FCheck;
 typedef struct _fedit_t FEdit;
 typedef struct _ftext_t FText;
 typedef struct _fimage_t FImage;
+typedef struct _fslider_t FSlider;
+typedef struct _fprogress_t FProgress;
 typedef struct _fcolumn_t FColumn;
 typedef struct _frow_t FRow;
 /* Must be a union (when dbind supports) */
@@ -29,7 +31,9 @@ typedef enum _celltype_t
     ekCELL_TYPE_EDIT,
     ekCELL_TYPE_LAYOUT,
     ekCELL_TYPE_TEXT,
-	ekCELL_TYPE_IMAGE
+    ekCELL_TYPE_IMAGE,
+    ekCELL_TYPE_SLIDER,
+    ekCELL_TYPE_PROGRESS
 } celltype_t;
 
 /* Don't change the order. Add new values to end */
@@ -62,6 +66,9 @@ typedef enum _scale_t
 struct _flabel_t
 {
     String *text;
+    bool_t multiline;
+    real32_t min_width;
+    halign_t align;
 };
 
 struct _fbutton_t
@@ -98,6 +105,16 @@ struct _fimage_t
     real32_t min_height;
 };
 
+struct _fslider_t
+{
+	real32_t min_width;
+};
+
+struct _fprogress_t
+{
+	real32_t min_width;
+};
+
 struct _fcolumn_t
 {
     real32_t margin_right;
@@ -118,6 +135,8 @@ struct _fwidget_t
     FEdit *edit;
     FText *text;
     FImage *image;
+    FSlider *slider;
+    FProgress *progress;
     FLayout *layout;
 };
 

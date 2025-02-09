@@ -32,11 +32,17 @@ void dform_synchro_cell_image(DForm *form, const DSelect *sel, const Image *imag
 
 void dform_synchro_button(DForm *form, const DSelect *sel);
 
+void dform_synchro_label(DForm *form, const DSelect *sel);
+
 void dform_synchro_edit(DForm *form, const DSelect *sel);
 
 void dform_synchro_textview(DForm *form, const DSelect *sel);
 
 void dform_synchro_imageview(DForm *form, const DSelect *sel);
+
+void dform_synchro_slider(DForm *form, const DSelect *sel);
+
+void dform_synchro_progress(DForm *form, const DSelect *sel);
 
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel);
 

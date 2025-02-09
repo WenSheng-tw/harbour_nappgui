@@ -5,9 +5,7 @@
 #include <nflib/flayout.h>
 #include <gui/button.h>
 #include <gui/button.h>
-#include <gui/buttonh.h>
 #include <gui/label.h>
-#include <gui/labelh.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
 #include <gui/edit.h>
@@ -28,6 +26,7 @@
 #include <sewer/bmath.h>
 #include <sewer/bmem.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 static color_t i_BGCOLOR = 0;
 static color_t i_SEL_COLOR = 0;
@@ -57,7 +56,7 @@ static void i_remove_cell(DCell *cell)
 
 /*---------------------------------------------------------------------------*/
 
-DLayout *dlayout_from_flayout(const FLayout *flayout)
+DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_path)
 {
     DLayout *layout = heap_new(DLayout);
     uint32_t i, ncols = flayout_ncols(flayout);
@@ -76,8 +75,20 @@ DLayout *dlayout_from_flayout(const FLayout *flayout)
         for (i = 0; i < ncols; ++i)
         {
             const FCell *fcell = flayout_ccell(flayout, i, j);
+            if (fcell->type == ekCELL_TYPE_IMAGE)
+            {
+                String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
+                Image *image = image_from_file(tc(path), NULL);
+                dlayout_set_image(layout, image, i, j);
+                str_destroy(&path);
+                ptr_destopt(image_destroy, &image, Image);
+            }
+
             if (fcell->type == ekCELL_TYPE_LAYOUT)
-                dcell->sublayout = dlayout_from_flayout(fcell->widget.layout);
+            {
+                dcell->sublayout = dlayout_from_flayout(fcell->widget.layout, resource_path);
+            }
+
             dcell += 1;
         }
     }
@@ -619,7 +630,23 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_fill_color(ctx, i_BGCOLOR);
                 draw_text_color(ctx, color);
                 draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
-                drawctrl_text(ctx, tc(fcell->widget.label->text), (int32_t)dcell->content_rect.pos.x, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
+                
+                if (fcell->widget.label->min_width > 0)
+                    draw_text_width(ctx, fcell->widget.label->min_width);
+
+                if (fcell->widget.label->multiline == TRUE)
+                {
+                    draw_text(ctx, tc(fcell->widget.label->text), dcell->content_rect.pos.x, dcell->content_rect.pos.y);
+                }
+                else
+                {
+                    /* TODO: Clipping */
+                    drawctrl_text(ctx, tc(fcell->widget.label->text), (int32_t)dcell->content_rect.pos.x, (int32_t)dcell->content_rect.pos.y, ekCTRL_STATE_NORMAL);
+                }
+
+                if (fcell->widget.label->min_width > 0)
+                    draw_text_width(ctx, 0);
+
                 break;
             }
 
@@ -735,7 +762,43 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
-			case ekCELL_TYPE_LAYOUT:
+            case ekCELL_TYPE_SLIDER:
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                real32_t tickness = 2;
+                real32_t knob_width = 8;
+                real32_t knob_margin = 2;
+                real32_t ly = (dcell->content_rect.size.height - tickness) / 2;
+                real32_t knob_x = (dcell->content_rect.size.width - knob_width) / 2;
+                real32_t knob_height = dcell->content_rect.size.height - 2 * knob_margin;
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_fill_color(ctx, color);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y + ly, dcell->content_rect.size.width, tickness);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x + knob_x, dcell->content_rect.pos.y + knob_margin, knob_width, knob_height);
+                break;
+            }
+
+            case ekCELL_TYPE_PROGRESS:
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                real32_t step_width = 8;
+                real32_t margin = 2;
+                real32_t x = 0;
+                uint32_t k, n;
+                n = (uint32_t)bmath_floorf(dcell->content_rect.size.width / (step_width + margin));
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_fill_color(ctx, color);
+                for (k = 0; k < n; ++k)
+                {
+                    draw_rect(ctx, ekFILL, dcell->content_rect.pos.x + x, dcell->content_rect.pos.y + margin, step_width, dcell->content_rect.size.height - 2 * margin);
+                    x += step_width + margin;
+                }
+                break;
+            }
+
+            case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
                 dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, ctx);

@@ -48,6 +48,10 @@ _nflib_api void flayout_add_text(FLayout *layout, FText *text, const uint32_t co
 
 _nflib_api void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const uint32_t row);
 
+_nflib_api void flayout_add_slider(FLayout *layout, FSlider *slider, const uint32_t col, const uint32_t row);
+
+_nflib_api void flayout_add_progress(FLayout *layout, FProgress *progress, const uint32_t col, const uint32_t row);
+
 _nflib_api uint32_t flayout_ncols(const FLayout *layout);
 
 _nflib_api uint32_t flayout_nrows(const FLayout *layout);

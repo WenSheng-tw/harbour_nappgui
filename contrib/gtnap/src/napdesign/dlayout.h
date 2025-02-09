@@ -4,7 +4,7 @@
 
 void dlayout_global_init(void);
 
-DLayout *dlayout_from_flayout(const FLayout *flayout);
+DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_path);
 
 void dlayout_destroy(DLayout **layout);
 

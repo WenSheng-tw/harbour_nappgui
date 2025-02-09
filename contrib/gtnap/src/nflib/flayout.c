@@ -3,15 +3,15 @@
 #include "flayout.h"
 #include "nflib.h"
 #include <gui/button.h>
-#include <gui/buttonh.h>
 #include <gui/cell.h>
 #include <gui/label.h>
-#include <gui/labelh.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
 #include <gui/edit.h>
 #include <gui/textview.h>
 #include <gui/imageview.h>
+#include <gui/slider.h>
+#include <gui/progress.h>
 #include <draw2d/image.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
@@ -23,7 +23,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-static uint16_t i_VERSION = 2;
+static uint16_t i_VERSION = 3;
 static uint16_t i_STM_VERSION = 0;
 
 /*---------------------------------------------------------------------------*/
@@ -44,36 +44,7 @@ static void i_remove_row(FRow *row)
 
 static void i_remove_cell(FCell *cell)
 {
-    cassert_no_null(cell);
-    str_destroy(&cell->name);
-    switch (cell->type)
-    {
-    case ekCELL_TYPE_LABEL:
-        dbind_destroy(&cell->widget.label, FLabel);
-        break;
-    case ekCELL_TYPE_BUTTON:
-        dbind_destroy(&cell->widget.button, FButton);
-        break;
-    case ekCELL_TYPE_CHECK:
-        dbind_destroy(&cell->widget.check, FCheck);
-        break;
-    case ekCELL_TYPE_EDIT:
-        dbind_destroy(&cell->widget.edit, FEdit);
-        break;
-    case ekCELL_TYPE_TEXT:
-        dbind_destroy(&cell->widget.text, FText);
-        break;
-    case ekCELL_TYPE_IMAGE:
-        dbind_destroy(&cell->widget.image, FImage);
-        break;
-    case ekCELL_TYPE_LAYOUT:
-        flayout_destroy(&cell->widget.layout);
-        break;
-    case ekCELL_TYPE_EMPTY:
-        break;
-        cassert_default();
-    }
-    /* dbind_remove(cell, FCell); */
+    dbind_remove(cell, FCell);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -141,6 +112,18 @@ static FLabel *i_read_label(Stream *stm)
 {
     FLabel *label = heap_new0(FLabel);
     label->text = str_read(stm);
+    if (i_STM_VERSION >= 3)
+    {
+        label->multiline = stm_read_bool(stm);
+        label->min_width = stm_read_r32(stm);
+        label->align = stm_read_enum(stm, halign_t);
+    }
+    else
+    {
+        label->multiline = FALSE;
+        label->min_width = 0;
+        label->align = ekHALIGN_LEFT;
+    }
     return label;
 }
 
@@ -208,6 +191,24 @@ static FImage *i_read_image(Stream *stm)
 
 /*---------------------------------------------------------------------------*/
 
+static FSlider *i_read_slider(Stream *stm)
+{
+    FSlider *slider = heap_new0(FSlider);
+    slider->min_width = stm_read_r32(stm);
+    return slider;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static FProgress *i_read_progress(Stream *stm)
+{
+    FProgress *progress = heap_new0(FProgress);
+    progress->min_width = stm_read_r32(stm);
+    return progress;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
@@ -236,6 +237,12 @@ static void i_read_cell(Stream *stm, FCell *cell)
         break;
     case ekCELL_TYPE_IMAGE:
         cell->widget.image = i_read_image(stm);
+        break;
+    case ekCELL_TYPE_SLIDER:
+        cell->widget.slider = i_read_slider(stm);
+        break;
+    case ekCELL_TYPE_PROGRESS:
+        cell->widget.progress = i_read_progress(stm);
         break;
 	case ekCELL_TYPE_LAYOUT:
         cell->widget.layout = flayout_read(stm);
@@ -307,6 +314,9 @@ static void i_write_label(Stream *stm, const FLabel *label)
 {
     cassert_no_null(label);
     str_write(stm, label->text);
+    stm_write_bool(stm, label->multiline);
+    stm_write_r32(stm, label->min_width);
+    stm_write_enum(stm, label->align, halign_t);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -360,6 +370,22 @@ static void i_write_image(Stream *stm, const FImage *image)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_write_slider(Stream *stm, const FSlider *slider)
+{
+    cassert_no_null(slider);
+    stm_write_r32(stm, slider->min_width);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_write_progress(Stream *stm, const FProgress *progress)
+{
+    cassert_no_null(progress);
+    stm_write_r32(stm, progress->min_width);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_write_cell(Stream *stm, const FCell *cell)
 {
     cassert_no_null(cell);
@@ -388,6 +414,12 @@ static void i_write_cell(Stream *stm, const FCell *cell)
         break;
     case ekCELL_TYPE_IMAGE:
 		i_write_image(stm, cell->widget.image);
+        break;
+    case ekCELL_TYPE_SLIDER:
+		i_write_slider(stm, cell->widget.slider);
+        break;
+    case ekCELL_TYPE_PROGRESS:
+		i_write_progress(stm, cell->widget.progress);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_write(stm, cell->widget.layout);
@@ -684,6 +716,34 @@ void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const
 
 /*---------------------------------------------------------------------------*/
 
+void flayout_add_slider(FLayout *layout, FSlider *slider, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(slider);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_SLIDER;
+    cell->halign = ekHALIGN_JUSTIFY;
+    cell->valign = ekHALIGN_CENTER;
+    cell->widget.slider = slider;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void flayout_add_progress(FLayout *layout, FProgress *progress, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(progress);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_PROGRESS;
+    cell->halign = ekHALIGN_JUSTIFY;
+    cell->valign = ekHALIGN_CENTER;
+    cell->widget.progress = progress;
+}
+
+/*---------------------------------------------------------------------------*/
+
 uint32_t flayout_ncols(const FLayout *layout)
 {
     cassert_no_null(layout);
@@ -768,6 +828,24 @@ static align_t i_valign(const valign_t valign)
 
 /*---------------------------------------------------------------------------*/
 
+static gui_scale_t i_scale(const scale_t scale)
+{
+    switch(scale) {
+    case ekSCALE_NONE:
+        return ekGUI_SCALE_NONE;
+    case ekSCALE_AUTO:
+        return ekGUI_SCALE_AUTO;
+    case ekSCALE_ASPECT:
+        return ekGUI_SCALE_ASPECT;
+    case ekSCALE_FIT:
+        return ekGUI_SCALE_ADJUST;
+    cassert_default();
+    }
+    return ekGUI_SCALE_ASPECT;
+}
+
+/*---------------------------------------------------------------------------*/
+
 Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const real32_t empty_width, const real32_t empty_height)
 {
     uint32_t ncols = 0, nrows = 0;
@@ -830,6 +908,9 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     FLabel *flabel = cells->widget.label;
                     Label *glabel = label_create();
                     label_text(glabel, tc(flabel->text));
+                    label_multiline(glabel, flabel->multiline);
+                    label_min_width(glabel, flabel->min_width);
+                    label_align(glabel, i_halign(flabel->align));
                     layout_label(glayout, glabel, i, j);
                     break;
                 }
@@ -880,26 +961,46 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     ImageView *gimage = imageview_create();
                     String *path = str_cpath("%s/%s", resource_path, tc(fimage->path));
                     Image *image = image_from_file(tc(path), NULL);
-					
-					if (image != NULL)
-					{
+
+                    if (image != NULL)
+                    {
                         imageview_image(gimage, image);
                         image_destroy(&image);
-					}
-					else
-					{
+                    }
+                    else
+                    {
                         /* Use a default image */
                         const Image *rimage = nflib_default_image();
                         imageview_image(gimage, rimage);
-					}
+                    }
 
-					str_destroy(&path);
+                    str_destroy(&path);
                     imageview_size(gimage, s2df(fimage->min_width, fimage->min_height));
+                    imageview_scale(gimage, i_scale(fimage->scale));
                     layout_imageview(glayout, gimage, i, j);
                     break;
                 }
 
-				case ekCELL_TYPE_LAYOUT:
+                case ekCELL_TYPE_SLIDER:
+                {
+                    FSlider *fslider = cells->widget.slider;
+                    Slider *gslider = slider_create();
+					slider_min_width(gslider, fslider->min_width);
+                    slider_value(gslider, .5f);
+                    layout_slider(glayout, gslider, i, j);
+                    break;
+                }
+
+                case ekCELL_TYPE_PROGRESS:
+                {
+                    FProgress *fprogress = cells->widget.progress;
+                    Progress *gprogress = progress_create();
+					progress_min_width(gprogress, fprogress->min_width);
+                    layout_progress(glayout, gprogress, i, j);
+                    break;
+                }
+
+                case ekCELL_TYPE_LAYOUT:
                 {
                     Layout *gsublayout = flayout_to_gui(cells->widget.layout, resource_path, empty_width, empty_height);
                     layout_layout(glayout, gsublayout, i, j);
@@ -940,6 +1041,8 @@ GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout
                 case ekCELL_TYPE_EDIT:
                 case ekCELL_TYPE_TEXT:
                 case ekCELL_TYPE_IMAGE:
+                case ekCELL_TYPE_SLIDER:
+                case ekCELL_TYPE_PROGRESS:
 				{
                     Cell *gcell = layout_cell(gui_layout, i, j);
                     return cell_control(gcell);

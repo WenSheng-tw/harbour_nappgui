@@ -18,6 +18,8 @@
 #include <gui/layouth.h>
 #include <gui/panel.h>
 #include <gui/panel.inl>
+#include <gui/slider.h>
+#include <gui/progress.h>
 #include <gui/window.h>
 #include <draw2d/image.h>
 #include <geom2d/v2d.h>
@@ -209,7 +211,7 @@ void dform_compose(DForm *form)
         const char_t *resource_path = designer_folder_path(form->app);
         cassert(form->window == NULL);
         cassert(form->dlayout == NULL);
-        form->dlayout = dlayout_from_flayout(form->flayout);
+        form->dlayout = dlayout_from_flayout(form->flayout, resource_path);
         form->glayout = flayout_to_gui(form->flayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
         panel_layout(panel, form->glayout);
         form->window = window_create(ekWINDOW_STD);
@@ -420,6 +422,9 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 {
                     Label *label = label_create();
                     label_text(label, tc(flabel->text));
+                    label_multiline(label, flabel->multiline);
+                    label_min_width(label, flabel->min_width);
+                    label_align(label, i_halign(flabel->align));
                     i_sel_remove_cell(&sel);
                     flayout_add_label(sel.flayout, flabel, sel.col, sel.row);
                     layout_label(sel.glayout, label, sel.col, sel.row);
@@ -569,13 +574,63 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 }
 			}
 
+            case ekWIDGET_SLIDER:
+            {
+                FSlider *fslider = dialog_new_slider(window, &sel);
+                if (fslider != NULL)
+                {
+                    Slider *slider = slider_create();
+                    slider_min_width(slider, fslider->min_width);
+                    slider_value(slider, .5f);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_slider(sel.flayout, fslider, sel.col, sel.row);
+                    layout_slider(sel.glayout, slider, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
+            case ekWIDGET_PROGRESS:
+            {
+                FProgress *fprogress = dialog_new_progress(window, &sel);
+                if (fprogress != NULL)
+                {
+                    Progress *progress = progress_create();
+                    progress_min_width(progress, fprogress->min_width);
+                    progress_value(progress, .5f);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_progress(sel.flayout, fprogress, sel.col, sel.row);
+                    layout_progress(sel.glayout, progress, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+    
 			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
                 if (fsublayout != NULL)
                 {
                     const char_t *resource_path = designer_folder_path(form->app);
-                    DLayout *dsublayout = dlayout_from_flayout(fsublayout);
+                    DLayout *dsublayout = dlayout_from_flayout(fsublayout, resource_path);
                     Layout *gsublayout = flayout_to_gui(fsublayout, resource_path, i_EMPTY_CELL_WIDTH, i_EMPTY_CELL_HEIGHT);
                     i_layout_obj_names(form, fsublayout);
                     i_sel_remove_cell(&sel);
@@ -767,6 +822,23 @@ void dform_synchro_button(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_label(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    Label *label = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LABEL);
+    i_need_save(form);
+    label = layout_get_label(sel->glayout, sel->col, sel->row);
+    label_multiline(label, cell->widget.label->multiline);
+    label_min_width(label, cell->widget.label->min_width);
+    label_align(label, i_halign(cell->widget.label->align));
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_edit(DForm *form, const DSelect *sel)
 {
     FCell *cell = i_sel_fcell(sel);
@@ -813,6 +885,38 @@ void dform_synchro_imageview(DForm *form, const DSelect *sel)
     imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);    
     imageview_size(imgview, s2df(cell->widget.image->min_width, cell->widget.image->min_height));
     imageview_scale(imgview, i_scale(cell->widget.image->scale));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_slider(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    Slider *slider = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_SLIDER);
+    i_need_save(form);
+    slider = layout_get_slider(sel->glayout, sel->col, sel->row);    
+    slider_min_width(slider, cell->widget.slider->min_width);
+    slider_value(slider, .5f);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_progress(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    Progress *progress = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_PROGRESS);
+    i_need_save(form);
+    progress = layout_get_progress(sel->glayout, sel->col, sel->row);    
+    progress_min_width(progress, cell->widget.progress->min_width);
+    progress_value(progress, .5f);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -984,6 +1088,10 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "TextViewCell";
             case ekCELL_TYPE_IMAGE:
                 return "ImageViewCell";
+            case ekCELL_TYPE_SLIDER:
+                return "SliderCell";
+            case ekCELL_TYPE_PROGRESS:
+                return "ProgressCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();

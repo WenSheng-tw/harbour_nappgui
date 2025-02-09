@@ -55,7 +55,8 @@ HB_FUNC(NAP_FORM_ONCLICK)
 HB_FUNC(NAP_FORM_MODAL)
 {
     GtNapForm *form = cast(hb_parptr(1), GtNapForm);
-    uint32_t ret = hb_gtnap_form_modal(form);
+    const char_t *resource_path = hb_parcx(2);
+    uint32_t ret = hb_gtnap_form_modal(form, resource_path);
     hb_retni(ret);
 }
 

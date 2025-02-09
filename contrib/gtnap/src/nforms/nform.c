@@ -7,10 +7,13 @@
 #include <gui/guicontrol.h>
 #include <gui/label.h>
 #include <gui/panel.h>
+#include <gui/slider.h>
+#include <gui/progress.h>
 #include <gui/textview.h>
 #include <gui/window.h>
 #include <core/heap.h>
 #include <core/stream.h>
+#include <sewer/bmath.h>
 #include <sewer/cassert.h>
 
 struct _nform_t
@@ -132,6 +135,45 @@ void nform_set_control_bool(NForm *form, const char_t *cell_name, const bool_t v
 
 /*---------------------------------------------------------------------------*/
 
+void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        unref(value);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void nform_set_control_real(NForm *form, const char_t *cell_name, const real32_t value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        Slider *slider = guicontrol_slider(control);
+        Progress *progress = guicontrol_progress(control);
+        if (slider != NULL)
+        {
+            real32_t cvalue = bmath_clampf(value, 0, 1);
+            slider_value(slider, cvalue);
+        }
+        else if (progress != NULL)
+        {
+            real32_t cvalue = bmath_clampf(value, 0, 1);
+            progress_value(progress, cvalue);
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 bool_t nform_get_control_str(const NForm *form, const char_t *cell_name, const char_t **value)
 {
     GuiControl *control = NULL;
@@ -175,6 +217,50 @@ bool_t nform_get_control_bool(const NForm *form, const char_t *cell_name, bool_t
             gui_state_t state = button_get_state(button);
             *value = (state == ekGUI_OFF) ? FALSE : TRUE;
             return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool_t nform_get_control_int(const NForm *form, const char_t *cell_name, int32_t *value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    cassert_no_null(value);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        unref(value);
+    }
+
+    return FALSE;
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool_t nform_get_control_real(const NForm *form, const char_t *cell_name, real32_t *value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    cassert_no_null(value);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        Slider *slider = guicontrol_slider(control);
+        Progress *progress = guicontrol_progress(control);
+        if (slider != NULL)
+        {
+            *value = slider_get_value(slider);
+            return TRUE;
+        }
+        else if (progress != NULL)
+        {
+            *value = .5f;//progress_get_value(progress);
         }
     }
 
