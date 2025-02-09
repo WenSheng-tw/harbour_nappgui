@@ -256,6 +256,7 @@ bool_t nform_get_control_real(const NForm *form, const char_t *cell_name, real32
         if (slider != NULL)
         {
             *value = slider_get_value(slider);
+            return TRUE;
         }
         else if (progress != NULL)
         {

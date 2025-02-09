@@ -183,7 +183,8 @@ LOCAL N_SLIDER := 0.2
 LOCAL V_BIND := { ;
                     {"user_edit", @C_USER }, ;
                     {"pass_edit", @C_PASS }, ;
-                    {"slider", @N_SLIDER } ;
+                    {"slider", @N_SLIDER }, ;
+                    {"progress", N_SLIDER } ;
                 }
 
 LOCAL N_RES := 0
@@ -193,9 +194,6 @@ LOCAL C_MESSAGE := ""
 NAP_FORM_TITLE(V_FORM, "Formulário de login")
 // Write the variable values into the form controls (Edit, Buttons, etc)
 NAP_FORM_DBIND(V_FORM, V_BIND)
-// // // Buttons callback
-// // NAP_FORM_ONCLICK(V_FORM, "button_ok", {|| NAP_FORM_STOP_MODAL(V_FORM, 1000) })
-// // NAP_FORM_ONCLICK(V_FORM, "button_cancel", {|| NAP_FORM_STOP_MODAL(V_FORM, 1001) })
 
 // Launch the form
 N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
