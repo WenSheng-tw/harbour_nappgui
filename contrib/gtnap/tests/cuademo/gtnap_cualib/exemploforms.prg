@@ -16,6 +16,8 @@ ADDOPCAO V_JANELA TEXTO "Formulário #básico" ;
     ACAO TST_FORM_BASICO() AJUDA "P?????"
 ADDOPCAO V_JANELA TEXTO "Formulário com #TextView" ;
     ACAO TST_FORM_TEXT() AJUDA "P?????"
+ADDOPCAO V_JANELA TEXTO "Formulário de #login" ;
+    ACAO TST_FORM_LOGIN() AJUDA "P?????"
 *
 ATIVE(V_JANELA)
 *
@@ -74,7 +76,7 @@ NAP_FORM_ONCLICK(V_FORM, "button_ok", {|| NAP_FORM_STOP_MODAL(V_FORM, 1000) })
 NAP_FORM_ONCLICK(V_FORM, "button_cancel", {|| NAP_FORM_STOP_MODAL(V_FORM, 1001) })
 
 // Launch the form
-N_RES := NAP_FORM_MODAL(V_FORM)
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
 
 IF N_RES == NAP_MODAL_ENTER
     MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
@@ -139,7 +141,7 @@ NAP_FORM_ONCLICK(V_FORM, "button_ok", {|| NAP_FORM_STOP_MODAL(V_FORM, 1000) })
 NAP_FORM_ONCLICK(V_FORM, "button_cancel", {|| NAP_FORM_STOP_MODAL(V_FORM, 1001) })
 
 // Launch the form
-N_RES := NAP_FORM_MODAL(V_FORM)
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
 
 IF N_RES == NAP_MODAL_ENTER
     MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
@@ -162,6 +164,64 @@ IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
 
     C_MESSAGE := "C_TEXT1: " + C_TEXT1 + ";" + ;
                  "C_TEXT2: " + C_TEXT2
+
+    MOSTRAR("M?????",C_Message)
+
+ENDIF
+
+NAP_FORM_DESTROY(V_FORM)
+
+********************************
+STAT PROC TST_FORM_LOGIN
+********************************
+LOCAL V_FORM := NAP_FORM_LOAD(DIRET_FORMS() + "Login.nfm")
+LOCAL C_USER := "frang@nappgui.com"
+LOCAL C_PASS := "1234567890assddf"
+LOCAL N_SLIDER := 0.2
+
+// Mapping between Harbour variables and form control names
+LOCAL V_BIND := { ;
+                    {"user_edit", @C_USER }, ;
+                    {"pass_edit", @C_PASS }, ;
+                    {"slider", @N_SLIDER } ;
+                }
+
+LOCAL N_RES := 0
+LOCAL C_MESSAGE := ""
+
+// Window title
+NAP_FORM_TITLE(V_FORM, "Formulário de login")
+// Write the variable values into the form controls (Edit, Buttons, etc)
+NAP_FORM_DBIND(V_FORM, V_BIND)
+// // // Buttons callback
+// // NAP_FORM_ONCLICK(V_FORM, "button_ok", {|| NAP_FORM_STOP_MODAL(V_FORM, 1000) })
+// // NAP_FORM_ONCLICK(V_FORM, "button_cancel", {|| NAP_FORM_STOP_MODAL(V_FORM, 1001) })
+
+// Launch the form
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
+
+IF N_RES == NAP_MODAL_ENTER
+    MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
+ELSEIF N_RES == 1000
+    MOSTRAR("M?????","Botão [OK] pressionado, dados aceitos.")
+ELSEIF N_RES == NAP_MODAL_ESC
+    MOSTRAR("M?????","ESC pressionado, dados cancelados.")
+ELSEIF N_RES == NAP_MODAL_X_BUTTON
+    MOSTRAR("M?????","Formulário fechado com [X], dados cancelados.")
+ELSEIF N_RES == 1001
+    MOSTRAR("M?????","Botão [Cancelar] pressionado, dados cancelados.")
+ELSE
+    MOSTRAR("M?????","Valor de retorno desconhecido.")
+ENDIF
+
+IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
+
+    // Write the values from the GUI controls to Harbour variables
+    NAP_FORM_DBIND_STORE(V_FORM)
+
+    C_MESSAGE := "C_USER: " + C_USER + ";" + ;
+                 "C_PASS: " + C_PASS + ";" + ;
+                 "N_SLIDER: " + hb_ntos(N_SLIDER)
 
     MOSTRAR("M?????",C_Message)
 

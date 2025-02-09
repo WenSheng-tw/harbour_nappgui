@@ -5054,7 +5054,7 @@ static void i_center_window(const Window *parent, Window *window)
 
 /*---------------------------------------------------------------------------*/
 
-uint32_t hb_gtnap_form_modal(GtNapForm *form)
+uint32_t hb_gtnap_form_modal(GtNapForm *form, const char_t *resource_path)
 {
     GtNapWindow *gtwin = i_current_gtwin(GTNAP_GLOBAL);
     GtNapWindow *mwin = i_current_main_gtwin(GTNAP_GLOBAL);
@@ -5063,7 +5063,7 @@ uint32_t hb_gtnap_form_modal(GtNapForm *form)
     cassert_no_null(mwin);
     if (form->window == NULL)
     {
-        form->window = nform_window(form->form, ekWINDOW_STD | ekWINDOW_RETURN | ekWINDOW_ESC, NULL);
+        form->window = nform_window(form->form, ekWINDOW_STD | ekWINDOW_RETURN | ekWINDOW_ESC, resource_path);
         window_title(form->window, tc(form->title));
         i_map_bind_to_form(form->form, form->binds);
     }
