@@ -5,9 +5,7 @@
 #include <nflib/flayout.h>
 #include <gui/button.h>
 #include <gui/button.h>
-#include <gui/buttonh.h>
 #include <gui/label.h>
-#include <gui/labelh.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
 #include <gui/edit.h>
@@ -737,7 +735,18 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
 
             case ekCELL_TYPE_SLIDER:
             {
-                /* TODO: Slider drawing */
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                real32_t tickness = 2;
+                real32_t knob_width = 8;
+                real32_t knob_margin = 2;
+                real32_t ly = (dcell->content_rect.size.height - tickness) / 2;
+                real32_t knob_x = (dcell->content_rect.size.width - knob_width) / 2;
+                real32_t knob_height = dcell->content_rect.size.height - 2 * knob_margin;
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_fill_color(ctx, color);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y + ly, dcell->content_rect.size.width, tickness);
+                draw_rect(ctx, ekFILL, dcell->content_rect.pos.x + knob_x, dcell->content_rect.pos.y + knob_margin, knob_width, knob_height);
                 break;
             }
 

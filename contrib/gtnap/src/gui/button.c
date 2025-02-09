@@ -11,7 +11,6 @@
 /* Button */
 
 #include "button.h"
-#include "buttonh.h"
 #include "button.inl"
 #include "component.inl"
 #include "cell.inl"

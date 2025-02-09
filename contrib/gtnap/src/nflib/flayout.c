@@ -3,10 +3,8 @@
 #include "flayout.h"
 #include "nflib.h"
 #include <gui/button.h>
-#include <gui/buttonh.h>
 #include <gui/cell.h>
 #include <gui/label.h>
-#include <gui/labelh.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
 #include <gui/edit.h>
@@ -945,6 +943,7 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     FSlider *fslider = cells->widget.slider;
                     Slider *gslider = slider_create();
 					slider_min_width(gslider, fslider->min_width);
+                    slider_value(gslider, .5f);
                     layout_slider(glayout, gslider, i, j);
                     break;
                 }

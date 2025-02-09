@@ -577,6 +577,7 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 {
                     Slider *slider = slider_create();
                     slider_min_width(slider, fslider->min_width);
+                    slider_value(slider, .5f);
                     i_sel_remove_cell(&sel);
                     flayout_add_slider(sel.flayout, fslider, sel.col, sel.row);
                     layout_slider(sel.glayout, slider, sel.col, sel.row);
@@ -853,6 +854,7 @@ void dform_synchro_slider(DForm *form, const DSelect *sel)
     i_need_save(form);
     slider = layout_get_slider(sel->glayout, sel->col, sel->row);    
     slider_min_width(slider, cell->widget.slider->min_width);
+    slider_value(slider, .5f);
 }
 
 /*---------------------------------------------------------------------------*/
