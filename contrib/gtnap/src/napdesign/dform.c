@@ -570,6 +570,30 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 }
 			}
 
+            case ekWIDGET_SLIDER:
+            {
+                FSlider *fslider = dialog_new_slider(window, &sel);
+                if (fslider != NULL)
+                {
+                    Slider *slider = slider_create();
+                    slider_min_width(slider, fslider->min_width);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_slider(sel.flayout, fslider, sel.col, sel.row);
+                    layout_slider(sel.glayout, slider, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
 			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);

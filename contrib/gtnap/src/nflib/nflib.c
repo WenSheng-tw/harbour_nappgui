@@ -161,6 +161,7 @@ static void i_dbind(void)
     dbind(FWidget, FEdit *, edit);
     dbind(FWidget, FText *, text);
     dbind(FWidget, FImage *, image);
+    dbind(FWidget, FSlider *, slider);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
 }

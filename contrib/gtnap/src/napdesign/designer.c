@@ -54,6 +54,7 @@ static void i_dbind(void)
     dbind_enum(widget_t, ekWIDGET_EDITBOX, "");
     dbind_enum(widget_t, ekWIDGET_TEXTVIEW, "");
     dbind_enum(widget_t, ekWIDGET_IMAGEVIEW, "");
+    dbind_enum(widget_t, ekWIDGET_SLIDER, "");
     dbind(Designer, widget_t, swidget);
 }
 

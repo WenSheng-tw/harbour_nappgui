@@ -554,6 +554,46 @@ FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folde
 
 /*---------------------------------------------------------------------------*/
 
+FSlider *dialog_new_slider(Window *parent, const DSelect *sel)
+{
+    DialogData data;
+    Layout *layout1 = layout_create(1, 5);
+    Layout *layout2 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FSlider *fslider = dbind_create(FSlider);
+    uint32_t ret = 0;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New Slider widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    layout_label(layout1, label1, 0, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    //cell_dbind(layout_cell(layout1, 0, 1), FSlider, bool_t, passmode);
+    //cell_dbind(layout_cell(layout1, 0, 2), FSlider, bool_t, autosel);
+    //cell_dbind(layout_cell(layout2, 1, 0), FSlider, halign_t, text_align);
+    //layout_dbind(layout1, NULL, FSlider);
+    layout_dbind_obj(layout1, fslider, FSlider);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&fslider, FSlider);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    return fslider;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_grid_layout(void)
 {
     Layout *layout = layout_create(3, 2);

@@ -22,7 +22,8 @@ typedef enum _widget_t
     ekWIDGET_CHECKBOX,
     ekWIDGET_EDITBOX,
     ekWIDGET_TEXTVIEW,
-	ekWIDGET_IMAGEVIEW
+    ekWIDGET_IMAGEVIEW,
+    ekWIDGET_SLIDER
 } widget_t;
 
 typedef enum _layelem_t
