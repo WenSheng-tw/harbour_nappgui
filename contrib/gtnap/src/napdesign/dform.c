@@ -420,8 +420,9 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 FLabel *flabel = dialog_new_label(window, &sel);
                 if (flabel != NULL)
                 {
-                    Label *label = flabel->multiline ? label_multiline() : label_create();
+                    Label *label = label_create();
                     label_text(label, tc(flabel->text));
+                    label_multiline(label, flabel->multiline);
                     i_sel_remove_cell(&sel);
                     flayout_add_label(sel.flayout, flabel, sel.col, sel.row);
                     layout_label(sel.glayout, label, sel.col, sel.row);

@@ -878,8 +878,9 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                 case ekCELL_TYPE_LABEL:
                 {
                     FLabel *flabel = cells->widget.label;
-                    Label *glabel = cells->widget.label->multiline ? label_multiline() : label_create();
+                    Label *glabel = label_create();
                     label_text(glabel, tc(flabel->text));
+                    label_multiline(glabel, flabel->multiline);
                     layout_label(glayout, glabel, i, j);
                     break;
                 }

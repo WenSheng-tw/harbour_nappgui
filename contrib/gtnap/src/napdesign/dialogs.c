@@ -706,12 +706,13 @@ uint8_t dialog_unsaved_changes(Window *parent)
     DialogData data;
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = i_save_buttons(&data);
-    Label *label = label_multiline();
+    Label *label = label_create();
     Panel *panel = panel_create();
     Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
     uint32_t ret = 0;
     data.window = window;
     label_text(label, "There are unsaved changes in your current forms.\nChange will be lost if you open another project folder.\nDo you want to save your changes?");
+    label_multiline(label, TRUE);
     layout_label(layout1, label, 0, 0);
     layout_layout(layout1, layout2, 0, 1);
     layout_vmargin(layout1, 0, 5);
