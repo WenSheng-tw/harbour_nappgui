@@ -43,39 +43,7 @@ static void i_remove_row(FRow *row)
 
 static void i_remove_cell(FCell *cell)
 {
-    cassert_no_null(cell);
-    str_destroy(&cell->name);
-    switch (cell->type)
-    {
-    case ekCELL_TYPE_LABEL:
-        dbind_destroy(&cell->widget.label, FLabel);
-        break;
-    case ekCELL_TYPE_BUTTON:
-        dbind_destroy(&cell->widget.button, FButton);
-        break;
-    case ekCELL_TYPE_CHECK:
-        dbind_destroy(&cell->widget.check, FCheck);
-        break;
-    case ekCELL_TYPE_EDIT:
-        dbind_destroy(&cell->widget.edit, FEdit);
-        break;
-    case ekCELL_TYPE_TEXT:
-        dbind_destroy(&cell->widget.text, FText);
-        break;
-    case ekCELL_TYPE_IMAGE:
-        dbind_destroy(&cell->widget.image, FImage);
-        break;
-    case ekCELL_TYPE_SLIDER:
-        dbind_destroy(&cell->widget.slider, FSlider);
-        break;
-    case ekCELL_TYPE_LAYOUT:
-        flayout_destroy(&cell->widget.layout);
-        break;
-    case ekCELL_TYPE_EMPTY:
-        break;
-        cassert_default();
-    }
-    /* dbind_remove(cell, FCell); */
+    dbind_remove(cell, FCell);
 }
 
 /*---------------------------------------------------------------------------*/
