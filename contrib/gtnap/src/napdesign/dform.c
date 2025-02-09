@@ -19,6 +19,7 @@
 #include <gui/panel.h>
 #include <gui/panel.inl>
 #include <gui/slider.h>
+#include <gui/progress.h>
 #include <gui/window.h>
 #include <draw2d/image.h>
 #include <geom2d/v2d.h>
@@ -859,6 +860,21 @@ void dform_synchro_slider(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_progress(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    Progress *progress = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_PROGRESS);
+    i_need_save(form);
+    progress = layout_get_progress(sel->glayout, sel->col, sel->row);    
+    progress_min_width(progress, cell->widget.progress->min_width);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel)
 {
     cassert_no_null(form);
@@ -1028,6 +1044,8 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "ImageViewCell";
             case ekCELL_TYPE_SLIDER:
                 return "SliderCell";
+            case ekCELL_TYPE_PROGRESS:
+                return "ProgressCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();

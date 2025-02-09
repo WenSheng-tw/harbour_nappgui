@@ -11,6 +11,7 @@
 #include <gui/textview.h>
 #include <gui/imageview.h>
 #include <gui/slider.h>
+#include <gui/progress.h>
 #include <draw2d/image.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
@@ -191,6 +192,15 @@ static FSlider *i_read_slider(Stream *stm)
 
 /*---------------------------------------------------------------------------*/
 
+static FProgress *i_read_progress(Stream *stm)
+{
+    FProgress *progress = heap_new0(FProgress);
+    progress->min_width = stm_read_r32(stm);
+    return progress;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
@@ -222,6 +232,9 @@ static void i_read_cell(Stream *stm, FCell *cell)
         break;
     case ekCELL_TYPE_SLIDER:
         cell->widget.slider = i_read_slider(stm);
+        break;
+    case ekCELL_TYPE_PROGRESS:
+        cell->widget.progress = i_read_progress(stm);
         break;
 	case ekCELL_TYPE_LAYOUT:
         cell->widget.layout = flayout_read(stm);
@@ -355,6 +368,14 @@ static void i_write_slider(Stream *stm, const FSlider *slider)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_write_progress(Stream *stm, const FProgress *progress)
+{
+    cassert_no_null(progress);
+    stm_write_r32(stm, progress->min_width);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_write_cell(Stream *stm, const FCell *cell)
 {
     cassert_no_null(cell);
@@ -386,6 +407,9 @@ static void i_write_cell(Stream *stm, const FCell *cell)
         break;
     case ekCELL_TYPE_SLIDER:
 		i_write_slider(stm, cell->widget.slider);
+        break;
+    case ekCELL_TYPE_PROGRESS:
+		i_write_progress(stm, cell->widget.progress);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_write(stm, cell->widget.layout);
@@ -696,6 +720,20 @@ void flayout_add_slider(FLayout *layout, FSlider *slider, const uint32_t col, co
 
 /*---------------------------------------------------------------------------*/
 
+void flayout_add_progress(FLayout *layout, FProgress *progress, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(progress);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_PROGRESS;
+    cell->halign = ekHALIGN_JUSTIFY;
+    cell->valign = ekHALIGN_CENTER;
+    cell->widget.progress = progress;
+}
+
+/*---------------------------------------------------------------------------*/
+
 uint32_t flayout_ncols(const FLayout *layout)
 {
     cassert_no_null(layout);
@@ -921,6 +959,15 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     break;
                 }
 
+                case ekCELL_TYPE_PROGRESS:
+                {
+                    FProgress *fprogress = cells->widget.progress;
+                    Progress *gprogress = progress_create();
+					progress_min_width(gprogress, fprogress->min_width);
+                    layout_progress(glayout, gprogress, i, j);
+                    break;
+                }
+
                 case ekCELL_TYPE_LAYOUT:
                 {
                     Layout *gsublayout = flayout_to_gui(cells->widget.layout, resource_path, empty_width, empty_height);
@@ -963,6 +1010,7 @@ GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout
                 case ekCELL_TYPE_TEXT:
                 case ekCELL_TYPE_IMAGE:
                 case ekCELL_TYPE_SLIDER:
+                case ekCELL_TYPE_PROGRESS:
 				{
                     Cell *gcell = layout_cell(gui_layout, i, j);
                     return cell_control(gcell);

@@ -985,7 +985,11 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         {
             layout_dbind_obj(data->slider_layout, cell->widget.slider, FSlider);
             panel_visible_layout(data->cell_panel, 8);
-        }    
+        }  
+        else if (cell->type == ekCELL_TYPE_PROGRESS)
+        {
+            cassert(FALSE);
+        }
         else
         {
             cassert(FALSE);

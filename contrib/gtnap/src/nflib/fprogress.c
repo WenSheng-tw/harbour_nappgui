@@ -1,12 +1,12 @@
-/* Form slider */
+/* Form progressbar */
 
-#include "fslider.h"
+#include "fprogress.h"
 #include <core/dbind.h>
 #include <sewer/cassert.h>
 
 /*---------------------------------------------------------------------------*/
 
-FSlider *fslider_create(void)
+FProgress *fprogress_create(void)
 {
-    return dbind_create(FSlider);
+    return dbind_create(FProgress);
 }

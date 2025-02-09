@@ -750,6 +750,11 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
+            case ekCELL_TYPE_PROGRESS:
+            {
+                break;
+            }
+
             case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
