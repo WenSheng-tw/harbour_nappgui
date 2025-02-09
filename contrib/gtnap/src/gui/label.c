@@ -223,7 +223,8 @@ void label_style_over(Label *label, const uint32_t fstyle)
 void label_multiline(Label *label, const bool_t multiline)
 {
     cassert_no_null(label);
-    label->component.context->func_label_set_flags(label->component.ositem, multiline ? ekLABEL_MULTI : ekLABEL_SINGLE);
+    label->flags = multiline ? ekLABEL_MULTI : ekLABEL_SINGLE;
+    label->component.context->func_label_set_flags(label->component.ositem, label->flags);
 }
 
 /*---------------------------------------------------------------------------*/

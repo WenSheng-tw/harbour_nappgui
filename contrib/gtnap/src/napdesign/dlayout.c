@@ -26,6 +26,7 @@
 #include <sewer/bmath.h>
 #include <sewer/bmem.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 static color_t i_BGCOLOR = 0;
 static color_t i_SEL_COLOR = 0;
@@ -55,7 +56,7 @@ static void i_remove_cell(DCell *cell)
 
 /*---------------------------------------------------------------------------*/
 
-DLayout *dlayout_from_flayout(const FLayout *flayout)
+DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_path)
 {
     DLayout *layout = heap_new(DLayout);
     uint32_t i, ncols = flayout_ncols(flayout);
@@ -74,8 +75,20 @@ DLayout *dlayout_from_flayout(const FLayout *flayout)
         for (i = 0; i < ncols; ++i)
         {
             const FCell *fcell = flayout_ccell(flayout, i, j);
+            if (fcell->type == ekCELL_TYPE_IMAGE)
+            {
+                String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
+                Image *image = image_from_file(tc(path), NULL);
+                dlayout_set_image(layout, image, i, j);
+                str_destroy(&path);
+                ptr_destopt(image_destroy, &image, Image);
+            }
+
             if (fcell->type == ekCELL_TYPE_LAYOUT)
-                dcell->sublayout = dlayout_from_flayout(fcell->widget.layout);
+            {
+                dcell->sublayout = dlayout_from_flayout(fcell->widget.layout, resource_path);
+            }
+
             dcell += 1;
         }
     }
