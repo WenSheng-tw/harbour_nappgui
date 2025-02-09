@@ -22,7 +22,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-static uint16_t i_VERSION = 2;
+static uint16_t i_VERSION = 3;
 static uint16_t i_STM_VERSION = 0;
 
 /*---------------------------------------------------------------------------*/
@@ -111,6 +111,10 @@ static FLabel *i_read_label(Stream *stm)
 {
     FLabel *label = heap_new0(FLabel);
     label->text = str_read(stm);
+    if (i_STM_VERSION >= 3)
+        label->multiline = stm_read_bool(stm);
+    else
+        label->multiline = FALSE;
     return label;
 }
 
@@ -289,6 +293,7 @@ static void i_write_label(Stream *stm, const FLabel *label)
 {
     cassert_no_null(label);
     str_write(stm, label->text);
+    stm_write_bool(stm, label->multiline);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -835,7 +840,7 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                 case ekCELL_TYPE_LABEL:
                 {
                     FLabel *flabel = cells->widget.label;
-                    Label *glabel = label_create();
+                    Label *glabel = cells->widget.label->multiline ? label_multiline() : label_create();
                     label_text(glabel, tc(flabel->text));
                     layout_label(glayout, glabel, i, j);
                     break;

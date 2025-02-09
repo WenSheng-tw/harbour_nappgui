@@ -198,11 +198,12 @@ String *dialog_form_name(Window *parent, const char_t *name)
 FLabel *dialog_new_label(Window *parent, const DSelect *sel)
 {
     DialogData data;
-    Layout *layout1 = layout_create(1, 3);
+    Layout *layout1 = layout_create(1, 4);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
     Label *label1 = label_create();
     Label *label2 = label_create();
+    Button *check = button_check();
     Edit *edit = edit_create();
     Panel *panel = panel_create();
     Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
@@ -215,15 +216,18 @@ FLabel *dialog_new_label(Window *parent, const DSelect *sel)
     caption = str_printf("New Label widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
     label_text(label1, tc(caption));
     label_text(label2, "Text:");
+    button_text(check, "Multiline");
     layout_label(layout1, label1, 0, 0);
     layout_label(layout2, label2, 0, 0);
     layout_edit(layout2, edit, 1, 0);
     layout_layout(layout1, layout2, 0, 1);
-    layout_layout(layout1, layout3, 0, 2);
+    layout_button(layout1, check, 0, 2);
+    layout_layout(layout1, layout3, 0, 3);
     layout_vmargin(layout1, 0, 5);
     layout_vmargin(layout1, 1, 5);
     panel_layout(panel, layout1);
     cell_dbind(layout_cell(layout2, 1, 0), FLabel, String*, text);
+    cell_dbind(layout_cell(layout1, 0, 2), FLabel, bool_t, multiline);
     layout_dbind(layout1, NULL, FLabel);
     layout_dbind_obj(layout1, flabel, FLabel);
     window_panel(window, panel);

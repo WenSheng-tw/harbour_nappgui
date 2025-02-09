@@ -64,6 +64,7 @@ typedef enum _scale_t
 struct _flabel_t
 {
     String *text;
+    bool_t multiline;
 };
 
 struct _fbutton_t
