@@ -938,6 +938,11 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
             panel_visible_layout(data->cell_panel, 7);
             button_tooltip(data->load_button, tc(cell->widget.image->path));
 		}
+        else if (cell->type == ekCELL_TYPE_SLIDER)
+        {
+            cassert(FALSE);
+            /* TODO Slider propedit */
+        }    
         else
         {
             cassert(FALSE);

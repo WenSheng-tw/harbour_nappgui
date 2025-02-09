@@ -735,7 +735,13 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
-			case ekCELL_TYPE_LAYOUT:
+            case ekCELL_TYPE_SLIDER:
+            {
+                /* TODO: Slider drawing */
+                break;
+            }
+
+            case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
                 dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, ctx);
