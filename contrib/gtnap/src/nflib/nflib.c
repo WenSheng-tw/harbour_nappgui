@@ -50,6 +50,8 @@ static void i_dbind(void)
     dbind_enum(scale_t, ekSCALE_FIT, "Fit");
     dbind(FLabel, String *, text);
     dbind(FLabel, bool_t, multiline);
+    dbind(FLabel, real32_t, min_width);
+    dbind(FLabel, halign_t, align);
     dbind(FButton, String *, text);
     dbind(FButton, real32_t, min_width);
     dbind(FCheck, String *, text);
@@ -107,6 +109,11 @@ static void i_dbind(void)
     dbind_range(FButton, real32_t, min_width, 10, 1000);
     
     dbind_default(FLabel, bool_t, multiline, FALSE);
+    dbind_default(FLabel, real32_t, min_width, 100);
+    dbind_increment(FLabel, real32_t, min_width, 1);
+    dbind_precision(FLabel, real32_t, min_width, 1);
+    dbind_range(FLabel, real32_t, min_width, 10, 1000);
+    dbind_default(FLabel, halign_t, align, ekHALIGN_LEFT);
 
     dbind_default(FEdit, real32_t, min_width, 100);
     dbind_increment(FEdit, real32_t, min_width, 1);

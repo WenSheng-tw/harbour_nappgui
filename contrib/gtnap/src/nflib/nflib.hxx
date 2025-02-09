@@ -67,6 +67,8 @@ struct _flabel_t
 {
     String *text;
     bool_t multiline;
+    real32_t min_width;
+    halign_t align;
 };
 
 struct _fbutton_t

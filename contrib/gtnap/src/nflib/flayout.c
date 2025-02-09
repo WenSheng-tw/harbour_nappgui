@@ -113,9 +113,17 @@ static FLabel *i_read_label(Stream *stm)
     FLabel *label = heap_new0(FLabel);
     label->text = str_read(stm);
     if (i_STM_VERSION >= 3)
+    {
         label->multiline = stm_read_bool(stm);
+        label->min_width = stm_read_r32(stm);
+        label->align = stm_read_enum(stm, halign_t);
+    }
     else
+    {
         label->multiline = FALSE;
+        label->min_width = 0;
+        label->align = ekHALIGN_LEFT;
+    }
     return label;
 }
 
@@ -307,6 +315,8 @@ static void i_write_label(Stream *stm, const FLabel *label)
     cassert_no_null(label);
     str_write(stm, label->text);
     stm_write_bool(stm, label->multiline);
+    stm_write_r32(stm, label->min_width);
+    stm_write_enum(stm, label->align, halign_t);
 }
 
 /*---------------------------------------------------------------------------*/
