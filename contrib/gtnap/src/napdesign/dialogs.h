@@ -20,6 +20,8 @@ FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folde
 
 FSlider *dialog_new_slider(Window *parent, const DSelect *sel);
 
+FProgress *dialog_new_progress(Window *parent, const DSelect *sel);
+
 FLayout *dialog_new_layout(Window *parent, const DSelect *sel);
 
 uint8_t dialog_unsaved_changes(Window *parent);

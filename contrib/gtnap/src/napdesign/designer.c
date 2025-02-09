@@ -55,6 +55,7 @@ static void i_dbind(void)
     dbind_enum(widget_t, ekWIDGET_TEXTVIEW, "");
     dbind_enum(widget_t, ekWIDGET_IMAGEVIEW, "");
     dbind_enum(widget_t, ekWIDGET_SLIDER, "");
+    dbind_enum(widget_t, ekWIDGET_PROGRESS, "");
     dbind(Designer, widget_t, swidget);
 }
 
@@ -526,7 +527,7 @@ static Layout *i_tools_layout(Designer *app, ResPack *pack)
 
 static Layout *i_widgets_layout(Designer *app)
 {
-    Layout *layout = layout_create(1, 9);
+    Layout *layout = layout_create(1, 10);
     Button *radio1 = button_radio();
     Button *radio2 = button_radio();
     Button *radio3 = button_radio();
@@ -536,6 +537,7 @@ static Layout *i_widgets_layout(Designer *app)
     Button *radio7 = button_radio();
     Button *radio8 = button_radio();
     Button *radio9 = button_radio();
+    Button *radio10 = button_radio();
     button_text(radio1, "Select");
     button_text(radio2, "Grid layout");
     button_text(radio3, "Label");
@@ -545,6 +547,7 @@ static Layout *i_widgets_layout(Designer *app)
     button_text(radio7, "TextView");
     button_text(radio8, "ImageView");
     button_text(radio9, "Slider");
+    button_text(radio10, "Progress");
     layout_button(layout, radio1, 0, 0);
     layout_button(layout, radio2, 0, 1);
     layout_button(layout, radio3, 0, 2);
@@ -554,6 +557,7 @@ static Layout *i_widgets_layout(Designer *app)
     layout_button(layout, radio7, 0, 6);
     layout_button(layout, radio8, 0, 7);
     layout_button(layout, radio9, 0, 8);
+    layout_button(layout, radio10, 0, 9);
     layout_vmargin(layout, 0, 5);
     layout_vmargin(layout, 1, 5);
     layout_vmargin(layout, 2, 5);
@@ -562,6 +566,7 @@ static Layout *i_widgets_layout(Designer *app)
     layout_vmargin(layout, 5, 5);
     layout_vmargin(layout, 6, 5);
     layout_vmargin(layout, 7, 5);
+    layout_vmargin(layout, 8, 5);
     unref(app);
     return layout;
 }
