@@ -4897,6 +4897,16 @@ static void i_map_bind_to_form(NForm *form, ArrSt(GtNapBind) *binds)
                 HB_BOOL value = hb_itemGetL(base);
                 nform_set_control_bool(form, tc(bind->gui_id), (bool_t)value);
             }
+            else if (HB_ITEM_TYPE(base) == HB_IT_INTEGER)
+            {
+                long value = hb_itemGetNL(base);
+                nform_set_control_int(form, tc(bind->gui_id), (int32_t)value);
+            }
+            else if (HB_ITEM_TYPE(base) == HB_IT_DOUBLE)
+            {
+                double value = hb_itemGetND(base);
+                nform_set_control_real(form, tc(bind->gui_id), (real32_t)value);
+            }
         }
         else if (bind->listener != NULL)
         {
@@ -4963,6 +4973,18 @@ void hb_gtnap_form_dbind_store(GtNapForm *form)
                     bool_t value = FALSE;
                     if (nform_get_control_bool(form->form, tc(bind->gui_id), &value) == TRUE)
                         hb_itemPutL(base, value ? HB_TRUE : HB_FALSE);
+                }
+                else if (HB_ITEM_TYPE(base) == HB_IT_INTEGER)
+                {
+                    int32_t value = 0;
+                    if (nform_get_control_int(form->form, tc(bind->gui_id), &value) == TRUE)
+                        hb_itemPutNL(base, (long)value);
+                }
+                else if (HB_ITEM_TYPE(base) == HB_IT_DOUBLE)
+                {
+                    real32_t value = 0;
+                    if (nform_get_control_real(form->form, tc(bind->gui_id), &value) == TRUE)
+                        hb_itemPutND(base, (double)value);
                 }
             }
         }
