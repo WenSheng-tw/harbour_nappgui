@@ -60,7 +60,7 @@ static void i_image_transform(T2Df *t2d, const gui_scale_t scale, const real32_t
 {
     real32_t ratio_x = 1.f;
     real32_t ratio_y = 1.f;
-    switch(scale)
+    switch (scale)
     {
     case ekGUI_SCALE_NONE:
     case ekGUI_SCALE_ADJUST:
@@ -96,7 +96,7 @@ static void i_image_transform(T2Df *t2d, const gui_scale_t scale, const real32_t
             ratio_y = 1.f;
         }
         break;
-    cassert_default();
+        cassert_default();
     }
 
     {

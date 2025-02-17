@@ -23,6 +23,8 @@ _gui_api void label_min_width(Label *label, const real32_t width);
 
 _gui_api void label_text(Label *label, const char_t *text);
 
+_gui_api void label_size_text(Label *label, const char_t *text);
+
 _gui_api void label_font(Label *label, const Font *font);
 
 _gui_api const Font *label_get_font(const Label *label);
