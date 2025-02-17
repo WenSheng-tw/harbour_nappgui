@@ -192,6 +192,15 @@ void label_text(Label *label, const char_t *text)
 
 /*---------------------------------------------------------------------------*/
 
+void label_size_text(Label *label, const char_t *text)
+{
+    real32_t height = 0;
+    cassert_no_null(label);
+    font_extents(label->font, text, -1, &label->width, &height);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void label_font(Label *label, const Font *font)
 {
     cassert_no_null(label);
@@ -225,8 +234,7 @@ void label_multiline(Label *label, const bool_t multiline)
     cassert_no_null(label);
     label->flags = multiline ? ekLABEL_MULTI : ekLABEL_SINGLE;
     label->component.context->func_label_set_flags(label->component.ositem, label->flags);
-    if (multiline == TRUE)
-        label->component.context->func_label_set_ellipsis(label->component.ositem, (enum_t)ekELLIPNONE);
+    label->component.context->func_label_set_ellipsis(label->component.ositem, multiline ? (enum_t)ekELLIPMLINE : (enum_t)ekELLIPEND);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -295,7 +303,7 @@ void _label_dimension(Label *label, const uint32_t i, real32_t *dim0, real32_t *
         switch (label_get_type(label->flags))
         {
         case ekLABEL_SINGLE:
-            *dim1 = label->height;            
+            *dim1 = label->height;
             break;
 
         case ekLABEL_MULTI:

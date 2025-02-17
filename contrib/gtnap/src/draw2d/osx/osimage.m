@@ -195,7 +195,7 @@ OSImage *osimage_create_scaled(const OSImage *image, const uint32_t new_width, c
     cassert_no_null(src_image);
     cassert([[src_image representations] count] == 1);
     cassert([[[src_image representations] objectAtIndex:0] isKindOfClass:[NSBitmapImageRep class]]);
-    src_bitmap = cast([[(NSImage *)image representations] objectAtIndex:0], NSBitmapImageRep);
+    src_bitmap = cast([[cast(image, NSImage) representations] objectAtIndex:0], NSBitmapImageRep);
     cassert_no_null(src_bitmap);
     dest_bitmap = i_scale_bitmap(src_bitmap, new_width, new_height);
     scaled_image = [[NSImage alloc] initWithSize:NSMakeSize((CGFloat)new_width, (CGFloat)new_height)];
@@ -442,7 +442,25 @@ void osimage_write(const OSImage *image, const codec_t codec, Stream *stream)
     irep = cast([[cast(image, NSImage) representations] objectAtIndex:0], NSBitmapImageRep);
     cassert_no_null(irep);
     type = i_codec(codec);
-    edata = [irep representationUsingType:type properties:[NSDictionary dictionary]];
+
+    if (codec != ekBMP)
+    {
+        edata = [irep representationUsingType:type properties:[NSDictionary dictionary]];
+    }
+    else
+    {
+        /*
+         * Cocoa/CoreGraphics don't generate a correct BMP data from original
+         * indexed "palette" (1, 2, 4, 8bpp) PNG/BMP images.
+         * Generate a full back image with corrupt data at the end of bmp buffer.
+         *
+         * This fix create an intermediate JPG image, to break the palette.
+         */
+        NSData *nedata = [irep representationUsingType:i_codec(ekJPG) properties:[NSDictionary dictionary]];
+        NSBitmapImageRep *nirep = [NSBitmapImageRep imageRepWithData:nedata];
+        edata = [nirep representationUsingType:type properties:[NSDictionary dictionary]];
+    }
+
     cassert_no_null(edata);
     stm_write(stream, cast_const([edata bytes], byte_t), (uint32_t)[edata length]);
     /*[edata release]; No release (NSApplication crash) */

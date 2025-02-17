@@ -215,19 +215,10 @@ const char_t *oscomwin_file(OSWindow *parent, const char_t **ftypes, const uint3
         ofn.nMaxFile = sizeof(file);
         ofn.lpstrFileTitle = NULL;
         ofn.nMaxFileTitle = 0;
+        ofn.lpstrInitialDir = NULL;
         ofn.lpstrTitle = NULL;
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-		if (start_dir != NULL)
-		{
-            uint32_t bytes = unicode_convers(start_dir, i_FILENAME, ekUTF8, ekUTF16, sizeof(i_FILENAME));
-            cassert_unref(bytes < sizeof(i_FILENAME), bytes);
-            ofn.lpstrInitialDir = (LPCWSTR)i_FILENAME;
-        }
-		else
-		{
-            ofn.lpstrInitialDir = NULL;
-		}
         if (open == TRUE)
             ok = GetOpenFileName(&ofn);
         else
