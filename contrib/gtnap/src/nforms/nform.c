@@ -11,6 +11,7 @@
 #include <gui/progress.h>
 #include <gui/textview.h>
 #include <gui/window.h>
+#include <geom2d/r2d.h>
 #include <core/heap.h>
 #include <core/stream.h>
 #include <sewer/bmath.h>
@@ -286,5 +287,23 @@ bool_t nform_set_listener(NForm *form, const char_t *cell_name, Listener *listen
     }
 
     return FALSE;
+}
+
+/*---------------------------------------------------------------------------*/
+
+R2Df nform_get_control_frame(NForm *form, const char_t *cell_name, Window *window)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        R2Df frame = window_control_frame(window, control);
+        frame.pos = window_client_to_screen(window, frame.pos);
+        return frame;
+    }
+
+    return kR2D_ZEROf;
 }
 

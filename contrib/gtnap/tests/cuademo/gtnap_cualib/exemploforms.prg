@@ -308,6 +308,19 @@ NAP_DMENU_ADD_ITEM(O_MAINMENU, O_MAINITEM5)
 
 RETURN O_MAINMENU
 
+*******************************************
+STAT PROC LAUNCH_POPUP_MENU(O_MENU, V_FORM)
+*******************************************
+// Get the button frame in screen coordinates {x, y, width, height}
+LOCAL V_FRAME := NAP_FORM_CONTROL_FRAME(V_FORM, "button_launchpopup")
+
+// Unset the menu as menubar rol (if has this role)
+NAP_DMENU_BAR(NIL, V_FORM)
+
+// Launch the menu as popup, at the top-left corner of 'button_launchpopup'
+NAP_DMENU_POPUP(O_MENU, V_FORM, V_FRAME[1], V_FRAME[2])
+
+
 ********************************
 STAT PROC TST_FORM_DYNMENU
 ********************************
@@ -322,7 +335,7 @@ NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
 // Buttons callback
 NAP_FORM_ONCLICK(V_FORM, "button_setmenubar", {|| NAP_DMENU_BAR(O_MENU, V_FORM) })
 NAP_FORM_ONCLICK(V_FORM, "button_unsetmenubar", {|| NAP_DMENU_BAR(NIL, V_FORM) })
-NAP_FORM_ONCLICK(V_FORM, "button_launchpopup", {|| NAP_DMENU_BAR(NIL, V_FORM), NAP_DMENU_POPUP(O_MENU, V_FORM, 100, 200) })
+NAP_FORM_ONCLICK(V_FORM, "button_launchpopup", {|| LAUNCH_POPUP_MENU(O_MENU, V_FORM) })
 //
 //
 // button_insert0
@@ -338,6 +351,8 @@ ELSEIF N_RES == 1000
     MOSTRAR("M?????","Botão [OK] pressionado, dados aceitos.")
 ELSEIF N_RES == NAP_MODAL_ESC
     MOSTRAR("M?????","ESC pressionado, dados cancelados.")
+ELSEIF N_RES == NAP_MODAL_X_BUTTON
+    MOSTRAR("M?????","Formulário fechado com [X], dados cancelados.")
 ELSE
     MOSTRAR("M?????","Valor de retorno desconhecido.")
 ENDIF

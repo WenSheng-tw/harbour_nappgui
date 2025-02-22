@@ -30,4 +30,6 @@ _nforms_api bool_t nform_get_control_real(const NForm *form, const char_t *cell_
 
 _nforms_api bool_t nform_set_listener(NForm *form, const char_t *cell_name, Listener *listener);
 
+_nforms_api R2Df nform_get_control_frame(NForm *form, const char_t *cell_name, Window *window);
+
 __END_C

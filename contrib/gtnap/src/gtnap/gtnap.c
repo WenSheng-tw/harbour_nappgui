@@ -5087,6 +5087,14 @@ void hb_gtnap_form_stop_modal(GtNapForm *form, const uint32_t value)
 
 /*---------------------------------------------------------------------------*/
 
+R2Df hb_gtnap_form_control_frame(GtNapForm *form, const char_t *cell_name)
+{
+    cassert_no_null(form);
+    return nform_get_control_frame(form->form, cell_name, form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void hb_gtnap_form_destroy(GtNapForm **form)
 {
     cassert_no_null(form);
