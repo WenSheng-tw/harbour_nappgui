@@ -8,6 +8,7 @@
 #include "gtnap.inl"
 #include <gui/menuitem.h>
 #include <gui/menu.h>
+#include <core/strings.h>
 
 /*---------------------------------------------------------------------------*/
 
@@ -60,6 +61,16 @@ HB_FUNC(NAP_DMENUITEM_SUBMENU)
     GtNapMenuItem *item = cast(hb_parptr(1), GtNapMenuItem);
     GtNapMenu *submenu = cast(hb_parptr(2), GtNapMenu);
     hb_gtnap_menuitem_submenu(item, submenu);
+}
+
+/*---------------------------------------------------------------------------*/
+
+HB_FUNC(NAP_DMENUITEM_TEXT)
+{
+    GtNapMenuItem *item = cast(hb_parptr(1), GtNapMenuItem);
+    String *text = hb_gtnap_menuitem_text(item);
+    hb_retc(tc(text));
+    str_destroy(&text);
 }
 
 /*---------------------------------------------------------------------------*/

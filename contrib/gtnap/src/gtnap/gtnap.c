@@ -5126,7 +5126,10 @@ static void i_OnMenuClick(GtNapCallback *callback, Event *e)
     unref(e);
     if (callback->block != NULL)
     {
-        PHB_ITEM ritem = hb_itemDo(callback->block, 0);
+        /* The menuitem itself will be allways the first param in click callback */
+        PHB_ITEM pItem = hb_itemPutPtr(NULL, callback->menuitem);
+        PHB_ITEM ritem = hb_itemDo(callback->block, 1, pItem);
+        hb_itemRelease(pItem);
         hb_itemRelease(ritem);
     }
 }
@@ -5235,6 +5238,14 @@ void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item)
 void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu)
 {
     menuitem_submenu(cast(item, MenuItem), dcast(&submenu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+String *hb_gtnap_menuitem_text(const GtNapMenuItem *item)
+{
+    const char_t *text = menuitem_get_text(cast_const(item, MenuItem));
+    return i_utf8_to_cp_string(text);
 }
 
 /*---------------------------------------------------------------------------*/
