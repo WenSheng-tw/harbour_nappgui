@@ -5120,75 +5120,10 @@ void hb_gtnap_form_destroy(GtNapForm **form)
 
 /*---------------------------------------------------------------------------*/
 
-static void i_OnMenuClick(GtNapCallback *callback, Event *e)
-{
-    cassert_no_null(callback);
-    unref(e);
-    if (callback->block != NULL)
-    {
-        /* The menuitem itself will be allways the first param in click callback */
-        PHB_ITEM pItem = hb_itemPutPtr(NULL, callback->menuitem);
-        PHB_ITEM ritem = hb_itemDo(callback->block, 1, pItem);
-        hb_itemRelease(pItem);
-        hb_itemRelease(ritem);
-    }
-}
-
-/*---------------------------------------------------------------------------*/
-
-static Listener *i_gtnap_menu_listener(HB_ITEM *block, GtNapMenuItem *item)
-{
-    GtNapCallback *callback = heap_new0(GtNapCallback);
-    cassert_no_null(item);
-    callback->block = block ? hb_itemNew(block) : NULL;
-    callback->menuitem = item;
-    callback->key = INT32_MAX;
-    callback->autoclose_id = UINT32_MAX;    
-    arrpt_append(GTNAP_GLOBAL->menu_callbacks, callback, GtNapCallback);
-    return listener(callback, i_OnMenuClick, GtNapCallback);
-}
-
-/*---------------------------------------------------------------------------*/
-
 GtNapMenu *hb_gtnap_menu_create(void)
 {
     Menu *menu = menu_create();
     return cast(menu, GtNapMenu);
-}
-
-/*---------------------------------------------------------------------------*/
-
-GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_path, HB_ITEM *click_block)
-{
-    MenuItem *item = menuitem_create();
-    String *text = hb_block_to_utf8(text_block);
-    menuitem_text(item, tc(text));
-
-    if (str_empty_c(icon_path) == FALSE)
-    {
-        Image *image = image_from_file(icon_path, NULL);
-        if (image != NULL)
-        {
-            menuitem_image(item, image);
-            image_destroy(&image);
-        }
-    }
-
-    {
-        Listener *listener = i_gtnap_menu_listener(click_block, cast(item, GtNapMenuItem));
-        menuitem_OnClick(item, listener);
-    }
-
-    str_destroy(&text);
-    return cast(item, GtNapMenuItem);
-}
-
-/*---------------------------------------------------------------------------*/
-
-GtNapMenuItem *hb_gtnap_menuitem_separator(void)
-{
-    MenuItem *item = menuitem_separator();
-    return cast(item, GtNapMenuItem);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -5235,17 +5170,31 @@ void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item)
 
 /*---------------------------------------------------------------------------*/
 
-void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu)
+void hb_gtnap_menu_ins_item(GtNapMenu *menu, const uint32_t pos, GtNapMenuItem *item)
 {
-    menuitem_submenu(cast(item, MenuItem), dcast(&submenu, Menu));
+    menu_ins_item(cast(menu, Menu), pos, cast(item, MenuItem));
 }
 
 /*---------------------------------------------------------------------------*/
 
-String *hb_gtnap_menuitem_text(const GtNapMenuItem *item)
+void hb_gtnap_menu_del_item(GtNapMenu *menu, const uint32_t pos)
 {
-    const char_t *text = menuitem_get_text(cast_const(item, MenuItem));
-    return i_utf8_to_cp_string(text);
+    menu_del_item(cast(menu, Menu), pos);
+}
+
+/*---------------------------------------------------------------------------*/
+
+uint32_t hb_gtnap_menu_count(const GtNapMenu *menu)
+{
+    return menu_count(cast(menu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menu_get_item(GtNapMenu *menu, const uint32_t index)
+{
+    MenuItem *item = menu_get_item(cast(menu, Menu), index);
+    return cast(item, GtNapMenuItem);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -5262,6 +5211,94 @@ void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, cons
 {
     cassert_no_null(form);
     menu_launch(cast(menu, Menu), form->window, v2df((real32_t)x, (real32_t)y));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnMenuClick(GtNapCallback *callback, Event *e)
+{
+    cassert_no_null(callback);
+    unref(e);
+    if (callback->block != NULL)
+    {
+        /* The menuitem itself will be allways the first param in click callback */
+        PHB_ITEM pItem = hb_itemPutPtr(NULL, callback->menuitem);
+        PHB_ITEM ritem = hb_itemDo(callback->block, 1, pItem);
+        hb_itemRelease(pItem);
+        hb_itemRelease(ritem);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static Listener *i_gtnap_menu_listener(HB_ITEM *block, GtNapMenuItem *item)
+{
+    GtNapCallback *callback = heap_new0(GtNapCallback);
+    cassert_no_null(item);
+    callback->block = block ? hb_itemNew(block) : NULL;
+    callback->menuitem = item;
+    callback->key = INT32_MAX;
+    callback->autoclose_id = UINT32_MAX;    
+    arrpt_append(GTNAP_GLOBAL->menu_callbacks, callback, GtNapCallback);
+    return listener(callback, i_OnMenuClick, GtNapCallback);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_path, HB_ITEM *click_block)
+{
+    MenuItem *item = menuitem_create();
+    String *text = hb_block_to_utf8(text_block);
+    menuitem_text(item, tc(text));
+
+    if (str_empty_c(icon_path) == FALSE)
+    {
+        Image *image = image_from_file(icon_path, NULL);
+        if (image != NULL)
+        {
+            menuitem_image(item, image);
+            image_destroy(&image);
+        }
+    }
+
+    {
+        Listener *listener = i_gtnap_menu_listener(click_block, cast(item, GtNapMenuItem));
+        menuitem_OnClick(item, listener);
+    }
+
+    str_destroy(&text);
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menuitem_separator(void)
+{
+    MenuItem *item = menuitem_separator();
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu)
+{
+    menuitem_submenu(cast(item, MenuItem), dcast(&submenu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+String *hb_gtnap_menuitem_get_text(const GtNapMenuItem *item)
+{
+    const char_t *text = menuitem_get_text(cast_const(item, MenuItem));
+    return i_utf8_to_cp_string(text);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenu *hb_gtnap_menuitem_get_submenu(GtNapMenuItem *item)
+{
+    Menu *menu = menuitem_get_submenu(cast(item, MenuItem));
+    return cast(menu, GtNapMenu);
 }
 
 /*---------------------------------------------------------------------------*/

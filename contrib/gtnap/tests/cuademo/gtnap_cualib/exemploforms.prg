@@ -232,7 +232,7 @@ NAP_FORM_DESTROY(V_FORM)
 ********************************
 STAT PROC ITEM_CLICKED(V_FORM, O_ITEM)
 ********************************
-LOCAL C_TEXT := NAP_DMENUITEM_TEXT(O_ITEM)
+LOCAL C_TEXT := NAP_DMENUITEM_GET_TEXT(O_ITEM)
 NAP_FORM_INSERT_TEXT(V_FORM, "textview", "Clicked: " + C_TEXT + hb_eol())
 
 *******************************************
