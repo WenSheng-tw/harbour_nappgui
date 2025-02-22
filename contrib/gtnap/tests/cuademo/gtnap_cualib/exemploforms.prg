@@ -316,6 +316,14 @@ LOCAL C_MESSAGE := ""
 // Window title
 NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
 
+// Buttons callback
+NAP_FORM_ONCLICK(V_FORM, "button_setmenubar", {|| NAP_DMENU_BAR(O_MENU, V_FORM) })
+// button_unsetmenubar
+// button_launchpopup
+// button_insert0
+// button_remove0
+// textview
+
 // Launch the form
 N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
 

@@ -216,6 +216,8 @@ extern void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item);
 
 extern void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu);
 
+extern void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form);
+
 HB_EXTERN_END
 
 #endif

@@ -53,3 +53,12 @@ HB_FUNC(NAP_DMENUITEM_SUBMENU)
     GtNapMenu *submenu = cast(hb_parptr(2), GtNapMenu);
     hb_gtnap_menuitem_submenu(item, submenu);
 }
+
+/*---------------------------------------------------------------------------*/
+
+HB_FUNC(NAP_DMENU_BAR)
+{
+    GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);
+    GtNapForm *form = cast(hb_parptr(2), GtNapForm);
+    hb_gtnap_menubar(menu, form);
+}

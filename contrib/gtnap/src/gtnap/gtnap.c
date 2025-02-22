@@ -5213,6 +5213,14 @@ void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu)
 
 /*---------------------------------------------------------------------------*/
 
+void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form)
+{
+    cassert_no_null(form);
+    osapp_menubar(cast(menu, Menu), form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
 String *hb_block_to_utf8(HB_ITEM *item)
 {
     String *str = NULL;
