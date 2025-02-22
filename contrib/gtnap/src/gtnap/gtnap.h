@@ -210,6 +210,8 @@ extern GtNapMenu *hb_gtnap_menu_create(void);
 
 extern GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_path, HB_ITEM *click_block);
 
+extern void hb_gtnap_menu_destroy(GtNapMenu *menu);
+
 extern void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item);
 
 extern void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu);

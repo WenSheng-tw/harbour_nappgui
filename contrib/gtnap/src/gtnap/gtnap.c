@@ -581,6 +581,7 @@ static void i_gtnap_destroy(GtNap **gtnap)
     cassert_no_null(gtnap);
     cassert_no_null(*gtnap);
     cassert(*gtnap == GTNAP_GLOBAL);
+    cassert(arrpt_size((*gtnap)->menu_callbacks, GtNapCallback) == 0);
     arrpt_destroy(&(*gtnap)->windows, i_destroy_gtwin, GtNapWindow);
     arrpt_destroy(&(*gtnap)->menu_callbacks, i_destroy_callback, GtNapCallback);
     font_destroy(&(*gtnap)->global_font);
@@ -5159,6 +5160,41 @@ GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_
 
     str_destroy(&text);
     return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_menu_callbacks(Menu *menu)
+{
+    uint32_t i, n = menu_count(menu);
+    for (i = 0; i < n; ++i)
+    {
+        MenuItem *item = menu_get_item(menu, i);
+        Menu *submenu = menuitem_get_submenu(item);
+        uint32_t callback_id = UINT32_MAX;
+
+        arrpt_foreach(callback, GTNAP_GLOBAL->menu_callbacks, GtNapCallback)
+            if (callback->menuitem == cast(item, GtNapMenuItem))
+            {
+                callback_id = callback_i;
+                break;
+            }
+        arrpt_end()
+
+        if (callback_id != UINT32_MAX)
+            arrpt_delete(GTNAP_GLOBAL->menu_callbacks, callback_id, i_destroy_callback, GtNapCallback);
+
+        if (submenu != NULL)
+            i_remove_menu_callbacks(submenu);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_destroy(GtNapMenu *menu)
+{
+    i_remove_menu_callbacks(cast(menu, Menu));
+    menu_destroy(dcast(&menu, Menu));
 }
 
 /*---------------------------------------------------------------------------*/

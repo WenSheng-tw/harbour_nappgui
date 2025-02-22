@@ -30,6 +30,14 @@ HB_FUNC(NAP_DMENUITEM_CREATE)
 
 /*---------------------------------------------------------------------------*/
 
+HB_FUNC(NAP_DMENU_DESTROY)
+{
+    GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);
+    hb_gtnap_menu_destroy(menu);
+}
+
+/*---------------------------------------------------------------------------*/
+
 HB_FUNC(NAP_DMENU_ADD_ITEM)
 {
     GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);
