@@ -70,3 +70,14 @@ HB_FUNC(NAP_DMENU_BAR)
     GtNapForm *form = cast(hb_parptr(2), GtNapForm);
     hb_gtnap_menubar(menu, form);
 }
+
+/*---------------------------------------------------------------------------*/
+
+HB_FUNC(NAP_DMENU_POPUP)
+{
+    GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);
+    GtNapForm *form = cast(hb_parptr(2), GtNapForm);
+    int32_t x = (int32_t)hb_parni(3);
+    int32_t y = (int32_t)hb_parni(4);
+    hb_gtnap_menu_popup(menu, form, x, y);
+}

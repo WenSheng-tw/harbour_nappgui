@@ -321,8 +321,10 @@ NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
 
 // Buttons callback
 NAP_FORM_ONCLICK(V_FORM, "button_setmenubar", {|| NAP_DMENU_BAR(O_MENU, V_FORM) })
-// button_unsetmenubar
-// button_launchpopup
+NAP_FORM_ONCLICK(V_FORM, "button_unsetmenubar", {|| NAP_DMENU_BAR(NIL, V_FORM) })
+NAP_FORM_ONCLICK(V_FORM, "button_launchpopup", {|| NAP_DMENU_BAR(NIL, V_FORM), NAP_DMENU_POPUP(O_MENU, V_FORM, 100, 200) })
+//
+//
 // button_insert0
 // button_remove0
 // textview

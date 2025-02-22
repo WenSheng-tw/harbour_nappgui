@@ -220,6 +220,8 @@ extern void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu);
 
 extern void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form);
 
+extern void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, const int32_t y);
+
 HB_EXTERN_END
 
 #endif

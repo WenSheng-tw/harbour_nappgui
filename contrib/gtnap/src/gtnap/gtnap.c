@@ -5229,6 +5229,14 @@ void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form)
 
 /*---------------------------------------------------------------------------*/
 
+void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, const int32_t y)
+{
+    cassert_no_null(form);
+    menu_launch(cast(menu, Menu), form->window, v2df((real32_t)x, (real32_t)y));
+}
+
+/*---------------------------------------------------------------------------*/
+
 String *hb_block_to_utf8(HB_ITEM *item)
 {
     String *str = NULL;
