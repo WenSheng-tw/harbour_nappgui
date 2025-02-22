@@ -18,6 +18,8 @@ ADDOPCAO V_JANELA TEXTO "Formulário com #TextView" ;
     ACAO TST_FORM_TEXT() AJUDA "P?????"
 ADDOPCAO V_JANELA TEXTO "Formulário de #login" ;
     ACAO TST_FORM_LOGIN() AJUDA "P?????"
+ADDOPCAO V_JANELA TEXTO "#Menus dinâmicos" ;
+    ACAO TST_FORM_DYNMENU() AJUDA "P?????"
 *
 ATIVE(V_JANELA)
 *
@@ -226,3 +228,33 @@ IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
 ENDIF
 
 NAP_FORM_DESTROY(V_FORM)
+
+********************************
+STAT PROC TST_FORM_DYNMENU
+********************************
+LOCAL V_FORM := NAP_FORM_LOAD(DIRET_FORMS() + "DynMenus.nfm")
+LOCAL N_RES := 0
+LOCAL C_MESSAGE := ""
+
+// Window title
+NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
+
+// Launch the form
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
+
+IF N_RES == NAP_MODAL_ENTER
+    MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
+ELSEIF N_RES == 1000
+    MOSTRAR("M?????","Botão [OK] pressionado, dados aceitos.")
+ELSEIF N_RES == NAP_MODAL_ESC
+    MOSTRAR("M?????","ESC pressionado, dados cancelados.")
+ELSE
+    MOSTRAR("M?????","Valor de retorno desconhecido.")
+ENDIF
+
+IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
+
+ENDIF
+
+NAP_FORM_DESTROY(V_FORM)
+
