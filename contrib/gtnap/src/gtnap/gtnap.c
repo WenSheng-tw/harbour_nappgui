@@ -5164,6 +5164,14 @@ GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_
 
 /*---------------------------------------------------------------------------*/
 
+GtNapMenuItem *hb_gtnap_menuitem_separator(void)
+{
+    MenuItem *item = menuitem_separator();
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_remove_menu_callbacks(Menu *menu)
 {
     uint32_t i, n = menu_count(menu);
