@@ -5045,6 +5045,16 @@ void hb_gtnap_form_OnClick(GtNapForm *form, const char_t *button_cell_name, HB_I
 
 /*---------------------------------------------------------------------------*/
 
+void hb_gtnap_form_insert_text(GtNapForm *form, const char_t *cell_name, HB_ITEM *text_block)
+{
+    String *text = hb_block_to_utf8(text_block);
+    cassert_no_null(form);
+    nform_add_control_str(form->form, cell_name, tc(text));
+    str_destroy(&text);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_center_window(const Window *parent, Window *window)
 {
     V2Df p1 = window_get_origin(parent);

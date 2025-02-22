@@ -14,6 +14,8 @@ _nforms_api Window *nform_window(const NForm *form, const uint32_t flags, const 
 
 _nforms_api void nform_set_control_str(NForm *form, const char_t *cell_name, const char_t *value);
 
+_nforms_api void nform_add_control_str(NForm *form, const char_t *cell_name, const char_t *value);
+
 _nforms_api void nform_set_control_bool(NForm *form, const char_t *cell_name, const bool_t value);
 
 _nforms_api void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t value);

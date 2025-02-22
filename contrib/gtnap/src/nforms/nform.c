@@ -120,6 +120,22 @@ void nform_set_control_str(NForm *form, const char_t *cell_name, const char_t *v
 
 /*---------------------------------------------------------------------------*/
 
+void nform_add_control_str(NForm *form, const char_t *cell_name, const char_t *value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        TextView *text = guicontrol_textview(control);
+        if (text != NULL)
+            textview_writef(text, value);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void nform_set_control_bool(NForm *form, const char_t *cell_name, const bool_t value)
 {
     GuiControl *control = NULL;

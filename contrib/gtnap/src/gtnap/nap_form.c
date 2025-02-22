@@ -52,6 +52,16 @@ HB_FUNC(NAP_FORM_ONCLICK)
 
 /*---------------------------------------------------------------------------*/
 
+HB_FUNC(NAP_FORM_INSERT_TEXT)
+{
+    GtNapForm *form = cast(hb_parptr(1), GtNapForm);
+    const char_t *cell_name = hb_parcx(2);
+    HB_ITEM *text_block = hb_param(3, HB_IT_BLOCK | HB_IT_STRING);
+    hb_gtnap_form_insert_text(form, cell_name, text_block);
+}
+
+/*---------------------------------------------------------------------------*/
+
 HB_FUNC(NAP_FORM_MODAL)
 {
     GtNapForm *form = cast(hb_parptr(1), GtNapForm);
