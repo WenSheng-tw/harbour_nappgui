@@ -5105,6 +5105,15 @@ R2Df hb_gtnap_form_control_frame(GtNapForm *form, const char_t *cell_name)
 
 /*---------------------------------------------------------------------------*/
 
+void hb_gtnap_form_update(GtNapForm *form)
+{
+    cassert_no_null(form);
+    if (form->window != NULL)
+        window_update(form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void hb_gtnap_form_destroy(GtNapForm **form)
 {
     cassert_no_null(form);
@@ -5203,6 +5212,13 @@ void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form)
 {
     cassert_no_null(form);
     osapp_menubar(cast(menu, Menu), form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool_t hb_gtnap_is_menubar(const GtNapMenu *menu)
+{
+    return menu_is_menubar(cast_const(menu, Menu));
 }
 
 /*---------------------------------------------------------------------------*/

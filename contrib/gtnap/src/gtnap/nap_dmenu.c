@@ -84,6 +84,15 @@ HB_FUNC(NAP_DMENU_BAR)
 
 /*---------------------------------------------------------------------------*/
 
+HB_FUNC(NAP_DMENU_IS_MENUBAR)
+{
+    GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);
+    bool_t isbar = hb_gtnap_is_menubar(menu);
+    hb_retl((int)isbar);
+}
+
+/*---------------------------------------------------------------------------*/
+
 HB_FUNC(NAP_DMENU_POPUP)
 {
     GtNapMenu *menu = cast(hb_parptr(1), GtNapMenu);

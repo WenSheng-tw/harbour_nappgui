@@ -95,6 +95,14 @@ HB_FUNC(NAP_FORM_CONTROL_FRAME)
 
 /*---------------------------------------------------------------------------*/
 
+HB_FUNC(NAP_FORM_UPDATE)
+{
+    GtNapForm *form = cast(hb_parptr(1), GtNapForm);
+    hb_gtnap_form_update(form);
+}
+
+/*---------------------------------------------------------------------------*/
+
 HB_FUNC(NAP_FORM_DESTROY)
 {
     GtNapForm *form = cast(hb_parptr(1), GtNapForm);

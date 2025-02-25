@@ -205,6 +205,8 @@ extern void hb_gtnap_form_stop_modal(GtNapForm *form, const uint32_t value);
 
 extern R2Df hb_gtnap_form_control_frame(GtNapForm *form, const char_t *cell_name);
 
+extern void hb_gtnap_form_update(GtNapForm *form);
+
 extern void hb_gtnap_form_destroy(GtNapForm **form);
 
 /* --------------------------- */
@@ -225,6 +227,8 @@ extern uint32_t hb_gtnap_menu_count(const GtNapMenu *menu);
 extern GtNapMenuItem *hb_gtnap_menu_get_item(GtNapMenu *menu, const uint32_t index);
 
 extern void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form);
+
+extern bool_t hb_gtnap_is_menubar(const GtNapMenu *menu);
 
 extern void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, const int32_t y);
 

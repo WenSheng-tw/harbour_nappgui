@@ -326,6 +326,96 @@ NAP_DMENU_BAR(NIL, V_FORM)
 // Launch the menu as popup, at the top-left corner of 'button_launchpopup'
 NAP_DMENU_POPUP(O_MENU, V_FORM, V_FRAME[1], V_FRAME[2])
 
+********************************
+STAT FUNCTION FORM_NEW_ITEM(C_NAME, N_ITEMS)
+********************************
+LOCAL V_FORM := NAP_FORM_LOAD(DIRET_FORMS() + "NewItem.nfm")
+LOCAL L_OK := .F.
+
+// Mapping between Harbour variables and form control names
+LOCAL V_BIND := { ;
+                    {"edit_name", @C_NAME }, ;
+                    {"edit_num_subitems", @N_ITEMS } ;
+                }
+
+LOCAL N_RES := 0
+LOCAL C_MESSAGE := ""
+
+// Window title
+NAP_FORM_TITLE(V_FORM, "Add new menu items")
+
+// Write the variable values into the form controls (Edit, Buttons, etc)
+NAP_FORM_DBIND(V_FORM, V_BIND)
+
+// Buttons callback
+NAP_FORM_ONCLICK(V_FORM, "button_ok", {|| NAP_FORM_STOP_MODAL(V_FORM, 1000) })
+NAP_FORM_ONCLICK(V_FORM, "button_cancel", {|| NAP_FORM_STOP_MODAL(V_FORM, 1001) })
+
+// Launch the form
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
+
+IF N_RES == NAP_MODAL_ENTER
+    MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
+ELSEIF N_RES == 1000
+    MOSTRAR("M?????","Botão [OK] pressionado, dados aceitos.")
+ELSEIF N_RES == NAP_MODAL_ESC
+    MOSTRAR("M?????","ESC pressionado, dados cancelados.")
+ELSEIF N_RES == NAP_MODAL_X_BUTTON
+    MOSTRAR("M?????","Formulário fechado com [X], dados cancelados.")
+ELSEIF N_RES == 1001
+    MOSTRAR("M?????","Botão [Cancelar] pressionado, dados cancelados.")
+ELSE
+    MOSTRAR("M?????","Valor de retorno desconhecido.")
+ENDIF
+
+IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
+
+    // Write the values from the GUI controls to Harbour variables
+    NAP_FORM_DBIND_STORE(V_FORM)
+
+    C_MESSAGE := "C_NAME: " + C_NAME + ";" + ;
+                 "N_ITEMS: " + hb_ntos(N_ITEMS)
+
+    MOSTRAR("M?????",C_Message)
+    L_OK := .T.
+
+ENDIF
+
+NAP_FORM_DESTROY(V_FORM)
+RETURN L_OK
+
+******************************************
+STAT PROC INSERT_NEW_ITEM(O_MENU, V_FORM)
+******************************************
+// Add a new submenu to main menu bar at runtime
+LOCAL C_NAME := "NewItem"
+LOCAL N_ITEMS := 3
+LOCAL O_SUBMENU := NIL
+LOCAL O_ITEM := NIL
+LOCAL N_CONT := 0
+
+// A form to get the name and items of new menu option
+LOCAL L_OK := FORM_NEW_ITEM(@C_NAME, @N_ITEMS)
+
+IF L_OK == .T.
+    // Create the submenu
+    O_SUBMENU := NAP_DMENU_CREATE()
+    FOR N_CONT := 1 TO N_ITEMS
+        O_ITEM := NAP_DMENUITEM_CREATE(C_NAME + "-" + hb_ntos(N_CONT), NIL, {| O_ITEM | ITEM_CLICKED(V_FORM, O_ITEM)})
+        NAP_DMENU_ADD_ITEM(O_SUBMENU, O_ITEM)
+    NEXT
+
+    // Create the new item, attach its submenu and insert the item in first position of main menu
+    O_ITEM = NAP_DMENUITEM_CREATE(C_NAME, NIL, NIL)
+    NAP_DMENUITEM_SUBMENU(O_ITEM, O_SUBMENU)
+    NAP_DMENU_INS_ITEM(O_MENU, 0, O_ITEM)
+
+    // Recompute the window size (in Windows/Linux the menubar is attached to the window)
+    IF NAP_DMENU_IS_MENUBAR(O_MENU) == .T.
+        NAP_FORM_UPDATE(V_FORM)
+    ENDIF
+
+ENDIF
 
 ********************************
 STAT PROC TST_FORM_DYNMENU
@@ -342,9 +432,11 @@ NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
 NAP_FORM_ONCLICK(V_FORM, "button_setmenubar", {|| NAP_DMENU_BAR(O_MENU, V_FORM) })
 NAP_FORM_ONCLICK(V_FORM, "button_unsetmenubar", {|| NAP_DMENU_BAR(NIL, V_FORM) })
 NAP_FORM_ONCLICK(V_FORM, "button_launchpopup", {|| LAUNCH_POPUP_MENU(O_MENU, V_FORM) })
+NAP_FORM_ONCLICK(V_FORM, "button_insert0", {|| INSERT_NEW_ITEM(O_MENU, V_FORM) })
+
 //
 //
-// button_insert0
+//
 // button_remove0
 // textview
 
