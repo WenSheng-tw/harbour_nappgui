@@ -5137,28 +5137,39 @@ GtNapMenu *hb_gtnap_menu_create(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_remove_menu_callbacks(Menu *menu);
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_item_callbacks(MenuItem *item)
+{
+    Menu *submenu = menuitem_get_submenu(item);
+    uint32_t callback_id = UINT32_MAX;
+
+    arrpt_foreach(callback, GTNAP_GLOBAL->menu_callbacks, GtNapCallback)
+        if (callback->menuitem == cast(item, GtNapMenuItem))
+        {
+            callback_id = callback_i;
+            break;
+        }
+    arrpt_end()
+
+    if (callback_id != UINT32_MAX)
+        arrpt_delete(GTNAP_GLOBAL->menu_callbacks, callback_id, i_destroy_callback, GtNapCallback);
+
+    if (submenu != NULL)
+        i_remove_menu_callbacks(submenu);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_remove_menu_callbacks(Menu *menu)
 {
     uint32_t i, n = menu_count(menu);
     for (i = 0; i < n; ++i)
     {
         MenuItem *item = menu_get_item(menu, i);
-        Menu *submenu = menuitem_get_submenu(item);
-        uint32_t callback_id = UINT32_MAX;
-
-        arrpt_foreach(callback, GTNAP_GLOBAL->menu_callbacks, GtNapCallback)
-            if (callback->menuitem == cast(item, GtNapMenuItem))
-            {
-                callback_id = callback_i;
-                break;
-            }
-        arrpt_end()
-
-        if (callback_id != UINT32_MAX)
-            arrpt_delete(GTNAP_GLOBAL->menu_callbacks, callback_id, i_destroy_callback, GtNapCallback);
-
-        if (submenu != NULL)
-            i_remove_menu_callbacks(submenu);
+        i_remove_item_callbacks(item);
     }
 }
 
@@ -5188,6 +5199,8 @@ void hb_gtnap_menu_ins_item(GtNapMenu *menu, const uint32_t pos, GtNapMenuItem *
 
 void hb_gtnap_menu_del_item(GtNapMenu *menu, const uint32_t pos)
 {
+    MenuItem *item = menu_get_item(cast(menu, Menu), pos);
+    i_remove_item_callbacks(item);
     menu_del_item(cast(menu, Menu), pos);
 }
 

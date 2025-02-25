@@ -384,9 +384,9 @@ ENDIF
 NAP_FORM_DESTROY(V_FORM)
 RETURN L_OK
 
-******************************************
-STAT PROC INSERT_NEW_ITEM(O_MENU, V_FORM)
-******************************************
+***********************************************
+STAT PROC INSERT_NEW_MENUITEM(O_MENU, V_FORM)
+***********************************************
 // Add a new submenu to main menu bar at runtime
 LOCAL C_NAME := "NewItem"
 LOCAL N_ITEMS := 3
@@ -417,6 +417,22 @@ IF L_OK == .T.
 
 ENDIF
 
+******************************************
+STAT PROC REMOVE_MENUITEM(O_MENU, V_FORM)
+******************************************
+LOCAL N_ITEMS := NAP_DMENU_COUNT(O_MENU)
+
+IF N_ITEMS > 0
+    // Remove the first item in main menu
+    NAP_DMENU_DEL_ITEM(O_MENU, 0)
+
+    // Recompute the window size (in Windows/Linux the menubar is attached to the window)
+    IF NAP_DMENU_IS_MENUBAR(O_MENU) == .T.
+        NAP_FORM_UPDATE(V_FORM)
+    ENDIF
+ENDIF
+
+
 ********************************
 STAT PROC TST_FORM_DYNMENU
 ********************************
@@ -432,13 +448,8 @@ NAP_FORM_TITLE(V_FORM, "Exemplo de Menus Dinâmicos")
 NAP_FORM_ONCLICK(V_FORM, "button_setmenubar", {|| NAP_DMENU_BAR(O_MENU, V_FORM) })
 NAP_FORM_ONCLICK(V_FORM, "button_unsetmenubar", {|| NAP_DMENU_BAR(NIL, V_FORM) })
 NAP_FORM_ONCLICK(V_FORM, "button_launchpopup", {|| LAUNCH_POPUP_MENU(O_MENU, V_FORM) })
-NAP_FORM_ONCLICK(V_FORM, "button_insert0", {|| INSERT_NEW_ITEM(O_MENU, V_FORM) })
-
-//
-//
-//
-// button_remove0
-// textview
+NAP_FORM_ONCLICK(V_FORM, "button_insert0", {|| INSERT_NEW_MENUITEM(O_MENU, V_FORM) })
+NAP_FORM_ONCLICK(V_FORM, "button_remove0", {|| REMOVE_MENUITEM(O_MENU, V_FORM) })
 
 // Launch the form
 N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
