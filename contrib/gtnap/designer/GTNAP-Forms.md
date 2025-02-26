@@ -169,6 +169,8 @@ GTNAP-FORMS includes an API for creating and modifying menus at runtime. A menu 
 
 ## Menu example
 
+![example_menu](https://github.com/user-attachments/assets/e96be2ae-435d-4607-b340-0a235383e24d)
+
 ```
 *******************************************
 STAT FUNCTION EXAMPLE_APP_DYN_MENU(V_FORM)
