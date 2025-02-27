@@ -378,20 +378,18 @@ function(nap_resource_packs targetName targetType nrcMode dir _resFiles _resIncl
 
             # VS2005 does not support .ico with 256 res
             if(MSVC_VERSION EQUAL 1400 OR MSVC_VERSION LESS 1400)
-                file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/res.rc "APPLICATION_ICON ICON \"res\\\\logo48.ico\"\n")
+                file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/res.rc "APPLICATION_ICON ICON \"${resPath}/logo48.ico\"\n")
                 set(globalRes ${resPath}/logo48.ico)
             else()
-                file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/res.rc "APPLICATION_ICON ICON \"res\\\\logo256.ico\"\n")
+                file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/res.rc "APPLICATION_ICON ICON \"${resPath}/logo256.ico\"\n")
                 set(globalRes ${resPath}/logo256.ico)
             endif()
 
-            # Copy the manifest file (required by MinGW)
+            # Reference the manifest file (required by MinGW)
             if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-                if (NOT EXISTS "${resPath}/Application.manifest")
-                    file(COPY "${NAPPGUI_ROOT_PATH}/prj/templates/Application.manifest" DESTINATION "${resPath}")
-                endif()
                 # https://geekthis.net/post/visual-styles-in-win32-api-c-gcc-mingw/
-                file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/res.rc "1 24 \"res\\\\Application.manifest\"\n")
+                set(MANIFEST_FILE "${NAPPGUI_ROOT_PATH}/prj/templates/Application.manifest")
+                file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/res.rc "1 24 \"${MANIFEST_FILE}\"\n")
             endif()
 
             set(globalRes ${globalRes} ${CMAKE_CURRENT_BINARY_DIR}/res.rc)
@@ -634,11 +632,112 @@ endfunction()
 
 #------------------------------------------------------------------------------
 
-function(nap_link_with_libraries targetName firstLevelDepends)
+function(nap_web_libs _weblibs)
+    if (WEB_SUPPORT)
+        if (WIN32)
+            if (${CMAKE_SIZEOF_VOID_P} STREQUAL 4)
+                set(WEBVIEW_LIBPATH "${NAPPGUI_ROOT_PATH}/prj/depend/web/win/x86/WebView2LoaderStatic.lib")
+            elseif (${CMAKE_SIZEOF_VOID_P} STREQUAL 8)
+                set(WEBVIEW_LIBPATH "${NAPPGUI_ROOT_PATH}/prj/depend/web/win/x64/WebView2LoaderStatic.lib")
+            endif()
 
+            # 'version' is required by WebView2Loader
+            set(${_weblibs} "${WEBVIEW_LIBPATH};version" PARENT_SCOPE)
+
+        elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+            set(WEBVIEW_FRAMEWORK ${CMAKE_OSX_SYSROOT}/System/Library/Frameworks/WebKit.framework)
+            set(${_weblibs} "${WEBVIEW_FRAMEWORK}" PARENT_SCOPE)
+
+        elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+            nap_find_webview_linux(WEBVIEW_FOUND WEBVIEW_HEADERS WEBVIEW_LIBS)
+            if (WEBVIEW_FOUND)
+                set(${_weblibs} "${WEBVIEW_LIBS}" PARENT_SCOPE)
+            endif()
+        endif()
+    endif()
+endfunction()
+
+#------------------------------------------------------------------------------
+
+function(nap_link_inet targetName)
+
+    if(NAPPGUI_IS_PACKAGE)
+        target_link_libraries(${targetName} nappgui::inet)
+    endif()
+
+    if(WIN32)
+        target_link_libraries(${targetName} wininet)
+
+    elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+        find_package(CURL)
+        if (${CURL_FOUND})
+            target_link_libraries(${targetName} ${CURL_LIBRARY})
+        else()
+            message(ERROR "- libCURL is required. Try 'sudo apt-get install libcurl4-openssl-dev'")
+        endif()
+
+    endif()
+
+endfunction()
+
+#------------------------------------------------------------------------------
+
+function(nap_link_opengl targetName)
+
+    if(NAPPGUI_IS_PACKAGE)
+        target_link_libraries(${targetName} nappgui::ogl3d)
+    endif()
+
+    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+        find_package(OpenGL REQUIRED EGL)
+        target_link_libraries(${targetName} ${OPENGL_LIBRARY})
+
+        if (OPENGL_egl_LIBRARY)
+            target_link_libraries(${targetName} ${OPENGL_egl_LIBRARY})
+
+        else()
+            # CMake older than 3.10 not detect EGL
+            if (NOT EGL_INCLUDE_DIR OR NOT EGL_LIBRARY)
+                message("-- Direct search of EGL")
+                find_path(EGL_INCLUDE_DIR "egl.h" PATHS "/usr/include/*" "/usr/local/include/*")
+                find_file(EGL_LIBRARY "libEGL.so" PATHS "/usr/lib/*" "/usr/local/lib/*")
+
+                if (EGL_INCLUDE_DIR)
+                    message(STATUS "-- EGL_INCLUDE_DIR: ${EGL_INCLUDE_DIR}")
+                else()
+                    message(FATAL_ERROR "-- EGL_INCLUDE_DIR: NOT FOUND")
+                endif()
+
+                if (EGL_LIBRARY)
+                    message(STATUS "-- EGL_LIBRARY: ${EGL_LIBRARY}")
+                else()
+                    message(FATAL_ERROR "-- EGL_LIBRARY: NOT FOUND")
+                endif()
+
+            endif()
+
+            target_include_directories(${targetName} PRIVATE ${EGL_INCLUDE_DIR})
+            target_link_libraries(${targetName} ${EGL_LIBRARY})
+
+        endif()
+
+    else()
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(${targetName} ${OPENGL_LIBRARY})
+
+    endif()
+
+endfunction()
+
+#------------------------------------------------------------------------------
+
+function(nap_link_with_libraries targetName targetType firstLevelDepends)
+
+    #
+    # Link with direct target dependencies
+    #
     set(${targetName}_LINKDEPENDS "" CACHE INTERNAL "")
     nap_target_dependencies(${targetName} "${firstLevelDepends}")
-    get_target_property(TARGET_TYPE ${targetName} TYPE)
 
     if (${targetName}_LINKDEPENDS)
         foreach(depend ${${targetName}_LINKDEPENDS})
@@ -654,15 +753,56 @@ function(nap_link_with_libraries targetName firstLevelDepends)
 
     endif()
 
-    # Target should link with math
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        target_link_libraries(${targetName} "m")
+    #
+    # Link with precompiled NAppGUI
+    #
+    if (NAPPGUI_IS_PACKAGE)
+        if (${targetType} STREQUAL "DESKTOP_APP" OR ${targetType} STREQUAL "DYNAMIC_LIB")
+            target_link_libraries(${targetName} "nappgui::osapp;nappgui::gui;nappgui::osgui;nappgui::draw2d;nappgui::geom2d;nappgui::core;nappgui::osbs;nappgui::sewer")
+        elseif (${targetType} STREQUAL "COMMAND_APP")
+            target_link_libraries(${targetName} "nappgui::draw2d;nappgui::geom2d;nappgui::core;nappgui::osbs;nappgui::sewer")
+        endif()
     endif()
 
-    # Target should link with pthread
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        nap_exists_dependency(${targetName} "osbs" _depends)
-        if (_depends)
+    #
+    # Link with system libraries
+    #
+    if (NOT NAPPGUI_IS_PACKAGE)
+        nap_exists_dependency(${targetName} "osbs" _depend_osbs)
+        nap_exists_dependency(${targetName} "draw2d" _depend_draw2d)
+        nap_exists_dependency(${targetName} "osgui" _depend_osgui)
+    else()
+        set(_depend_osbs True)
+        set(_depend_draw2d True)
+        if (${targetType} STREQUAL "DESKTOP_APP" OR ${targetType} STREQUAL "DYNAMIC_LIB")
+            set(_depend_osgui True)
+        else()
+            set(_depend_osgui False)
+        endif()
+    endif()
+
+    if(WIN32)
+        # Target should link with WinSockets
+        if (_depend_osbs)
+            target_link_libraries(${targetName} ws2_32)
+        endif()
+
+        # Target should link with gdiplus
+        if (_depend_draw2d)
+            target_link_libraries(${targetName} gdiplus shlwapi)
+        endif()
+
+        # Target should link with comctl32
+        if (_depend_osgui)
+            target_link_libraries(${targetName} comctl32 uxtheme)
+        endif()
+
+    elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+        # Target should link with math always
+        target_link_libraries(${targetName} "m")
+
+        # Target should link with pthread and dl
+        if (_depend_osbs)
             find_package(Threads)
             if (Threads_FOUND)
                 target_link_libraries(${targetName} ${CMAKE_THREAD_LIBS_INIT})
@@ -672,90 +812,50 @@ function(nap_link_with_libraries targetName firstLevelDepends)
 
             target_link_libraries(${targetName} ${CMAKE_DL_LIBS})
         endif()
-    endif()
 
-    # Target should link with GTK3
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        if (NOT CMAKE_TOOLKIT)
-            message(FATAL_ERROR "CMAKE_TOOLKIT is not set")
-        endif()
-
-        if (${CMAKE_TOOLKIT} STREQUAL "GTK3")
-            if (NOT NAPPGUI_IS_PACKAGE)
-                nap_exists_dependency(${targetName} "draw2d" _depends)
-            else()
-                set(_depends False)
+        if (_depend_draw2d)
+            # Graphics toolkit
+            if (NOT CMAKE_TOOLKIT)
+                message(FATAL_ERROR "CMAKE_TOOLKIT is not set")
             endif()
 
             # The target has to link with GTK+3
-            if (_depends)
+            if (${CMAKE_TOOLKIT} STREQUAL "GTK3")
                 # Use the package PkgConfig to detect GTK+ headers/library files
                 find_package(PkgConfig REQUIRED)
                 pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
                 target_link_libraries(${targetName} ${GTK3_LIBRARIES})
             endif()
         endif()
+
+    elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+        if (NOT ${targetType} STREQUAL "STATIC_LIB")
+            target_link_libraries(${targetName} ${COCOA_LIB})
+        endif()
+
     endif()
 
-    # Target should link with libCurl
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    # Target should link with WebView
+    nap_web_libs(_weblibs)
+    if (_weblibs)
+        target_link_libraries(${targetName} ${_weblibs})
+    endif()
+
+    # Target should link with network libraries
+    # Apps that use NAppGUI package must call 'nap_link_inet()'
+    if (NOT NAPPGUI_IS_PACKAGE)
         nap_exists_dependency(${targetName} "inet" _depends)
         if (_depends)
-            find_package(CURL)
-            if (${CURL_FOUND})
-                target_link_libraries(${targetName} ${CURL_LIBRARY})
-            else()
-                message(ERROR "- libCURL is required. Try 'sudo apt-get install libcurl4-openssl-dev'")
-            endif()
+            nap_link_inet(${targetName})
         endif()
     endif()
 
-    # Target should link with Cocoa
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-        if (NOT NAPPGUI_IS_PACKAGE)
-            nap_exists_dependency(${targetName} "draw2d" _depends1)
-            nap_exists_dependency(${targetName} "inet" _depends2)
-        else()
-            set(_depends1 False)
-            set(_depends1 False)
-        endif()
-
-        if (_depends1 OR _depends2)
-            if (NOT ${TARGET_TYPE} STREQUAL "STATIC_LIBRARY")
-                target_link_libraries(${targetName} ${COCOA_LIB})
-            endif()
-        endif()
-    endif()
-
-    # Target should link with winsockets
-    if(WIN32)
-        nap_exists_dependency(${targetName} "osbs" _depends)
+    # Target should link with OpenGL
+    # Apps that use NAppGUI package must call 'nap_link_opengl()'
+    if (NOT NAPPGUI_IS_PACKAGE)
+        nap_exists_dependency(${targetName} "ogl3d" _depends)
         if (_depends)
-            target_link_libraries(${targetName} ws2_32)
-        endif()
-    endif()
-
-    # Target should link with wininet
-    if(WIN32)
-        nap_exists_dependency(${targetName} "inet" _depends)
-        if (_depends)
-            target_link_libraries(${targetName} wininet)
-        endif()
-    endif()
-
-    # Target should link with gdiplus
-    if(WIN32)
-        nap_exists_dependency(${targetName} "draw2d" _depends)
-        if (_depends)
-            target_link_libraries(${targetName} gdiplus shlwapi)
-        endif()
-    endif()
-
-    # Target should link with comctl32
-    if(WIN32)
-        nap_exists_dependency(${targetName} "osgui" _depends)
-        if (_depends)
-            target_link_libraries(${targetName} comctl32 uxtheme)
+            nap_link_opengl(${targetName})
         endif()
     endif()
 
@@ -889,7 +989,7 @@ function(nap_target targetName targetType dependList nrcMode)
     if (WIN32)
         # Visual Studio 2005/2008 doesn't have <stdint.h>
         if(MSVC_VERSION EQUAL 1500 OR MSVC_VERSION LESS 1500)
-            target_include_directories(${targetName} PUBLIC $<BUILD_INTERFACE:${CMAKE_PRJ_PATH}/depend>)
+            target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${NAPPGUI_ROOT_PATH}/prj/depend>)
         endif()
 
         # Platform toolset macro
@@ -897,6 +997,30 @@ function(nap_target targetName targetType dependList nrcMode)
 
         # Force the name of the pdb (vc110.pdb in VS2012)
         set_target_properties(${targetName} PROPERTIES COMPILE_PDB_NAME ${targetName})
+    endif()
+
+    # WebView support
+    if (${targetName} STREQUAL "osgui")
+        if (WEB_SUPPORT)
+            if (WIN32)
+                target_include_directories("osgui" PRIVATE $<BUILD_INTERFACE:${NAPPGUI_ROOT_PATH}/prj/depend/web/win>)
+                target_compile_definitions("osgui" PUBLIC "-DNAPPGUI_WEB_SUPPORT")
+
+            elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+                target_compile_definitions("osgui" PUBLIC "-DNAPPGUI_WEB_SUPPORT")
+
+            elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+                nap_find_webview_linux(WEBVIEW_FOUND WEBVIEW_HEADERS WEBVIEW_LIBS)
+                if (WEBVIEW_FOUND)
+                    foreach(dir ${WEBVIEW_HEADERS})
+                        target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${dir}>)
+                    endforeach()
+
+                    target_compile_definitions("osgui" PUBLIC "-DNAPPGUI_WEB_SUPPORT")
+                endif()
+
+            endif()
+        endif()
     endif()
 
     # GTK Include directories
@@ -907,27 +1031,25 @@ function(nap_target targetName targetType dependList nrcMode)
                 find_package(PkgConfig REQUIRED)
                 pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
                 foreach(dir ${GTK3_INCLUDE_DIRS})
-                    target_include_directories(${targetName} PUBLIC $<BUILD_INTERFACE:${dir}>)
+                    target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${dir}>)
                 endforeach()
-                set_target_properties(${targetName} PROPERTIES COMPILE_FLAGS "-D__GTK3_TOOLKIT__")
+                target_compile_definitions(${targetName} PUBLIC "-D__GTK3_TOOLKIT__")
             endif()
         endif()
     endif()
 
-    # Build TARGET local and /src directory include
-    target_include_directories(${targetName} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
+    # Target global include directories
     if (NOT NAPPGUI_IS_PACKAGE)
-        target_include_directories(${targetName} PUBLIC $<BUILD_INTERFACE:${NAPPGUI_ROOT_PATH}/src>)
+        target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${NAPPGUI_ROOT_PATH}/src>)
+    else()
+        target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${NAPPGUI_INCLUDE_PATH}>)
     endif()
 
-    # Installed TARGET local and 'inc' directory include
-    target_include_directories(${targetName} PUBLIC $<INSTALL_INTERFACE:inc>)
-    target_include_directories(${targetName} PUBLIC $<INSTALL_INTERFACE:inc/${targetPathSingle}>)
+    target_include_directories(${targetName} PRIVATE $<INSTALL_INTERFACE:inc>)
 
     # Include dir for target generated resources
     if (resIncludeDir)
-        target_include_directories(${targetName} PUBLIC $<BUILD_INTERFACE:${resIncludeDir}>)
+        target_include_directories(${targetName} PRIVATE $<BUILD_INTERFACE:${resIncludeDir}>)
     endif()
 
     # Target dependency for compile order
@@ -949,7 +1071,7 @@ function(nap_library libName dependList buildShared nrcMode)
 
     if (buildShared)
         nap_target(${libName} DYNAMIC_LIB "${dependList}" ${nrcMode})
-        nap_link_with_libraries(${libName} "${dependList}")
+        nap_link_with_libraries(${libName} DYNAMIC_LIB "${dependList}")
         nap_target_rpath(${libName} NO "")
 
     else()
@@ -957,7 +1079,7 @@ function(nap_library libName dependList buildShared nrcMode)
 
         # # In Linux, static libs must link with other libs
         # if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        #     nap_link_with_libraries(${libName} "${dependList}")
+        #     nap_link_with_libraries(${libName} STATIC_LIB "${dependList}")
         # endif()
     endif()
 
@@ -990,7 +1112,7 @@ function(nap_command_app appName dependList nrcMode)
 
     endif()
 
-    nap_link_with_libraries(${appName} "${dependList}")
+    nap_link_with_libraries(${appName} COMMAND_APP "${dependList}")
     nap_target_rpath(${appName} NO "")
 
 endfunction()
@@ -1036,7 +1158,7 @@ function(nap_desktop_app appName dependList nrcMode)
 
     endif()
 
-    nap_link_with_libraries(${appName} "${dependList}")
+    nap_link_with_libraries(${appName} DESKTOP_APP "${dependList}")
     nap_target_rpath(${appName} ${macOSBundle} "")
 
 endfunction()

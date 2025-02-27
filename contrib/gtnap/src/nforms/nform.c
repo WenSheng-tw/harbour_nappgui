@@ -11,9 +11,12 @@
 #include <gui/progress.h>
 #include <gui/textview.h>
 #include <gui/window.h>
+#include <geom2d/r2d.h>
 #include <core/heap.h>
+#include <core/strings.h>
 #include <core/stream.h>
 #include <sewer/bmath.h>
+#include <sewer/bstd.h>
 #include <sewer/cassert.h>
 
 struct _nform_t
@@ -119,6 +122,22 @@ void nform_set_control_str(NForm *form, const char_t *cell_name, const char_t *v
 
 /*---------------------------------------------------------------------------*/
 
+void nform_add_control_str(NForm *form, const char_t *cell_name, const char_t *value)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        TextView *text = guicontrol_textview(control);
+        if (text != NULL)
+            textview_writef(text, value);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void nform_set_control_bool(NForm *form, const char_t *cell_name, const bool_t value)
 {
     GuiControl *control = NULL;
@@ -143,7 +162,21 @@ void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t v
     control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
     if (control != NULL)
     {
-        unref(value);
+        Label *label = guicontrol_label(control);
+        Edit *edit = guicontrol_edit(control);
+
+        if (label != NULL)
+        {
+            char_t text[32];
+            bstd_sprintf(text, sizeof(text), "%d", value);
+            label_text(label, text);
+        }
+        else if (edit != NULL)
+        {
+            char_t text[32];
+            bstd_sprintf(text, sizeof(text), "%d", value);
+            edit_text(edit, text);
+        }
     }
 }
 
@@ -234,7 +267,18 @@ bool_t nform_get_control_int(const NForm *form, const char_t *cell_name, int32_t
     control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
     if (control != NULL)
     {
-        unref(value);
+        Edit *edit = guicontrol_edit(control);
+        if (edit != NULL)
+        {
+            const char_t *text = edit_get_text(edit);
+            bool_t error = FALSE;
+            int32_t v = str_to_i32(text, 10, &error);
+            if (error == FALSE)
+            {
+                *value = v;
+                return TRUE;
+            }
+        }
     }
 
     return FALSE;
@@ -260,7 +304,7 @@ bool_t nform_get_control_real(const NForm *form, const char_t *cell_name, real32
         }
         else if (progress != NULL)
         {
-            *value = .5f;//progress_get_value(progress);
+            *value = .5f;
         }
     }
 
@@ -288,3 +332,20 @@ bool_t nform_set_listener(NForm *form, const char_t *cell_name, Listener *listen
     return FALSE;
 }
 
+/*---------------------------------------------------------------------------*/
+
+R2Df nform_get_control_frame(NForm *form, const char_t *cell_name, Window *window)
+{
+    GuiControl *control = NULL;
+    cassert_no_null(form);
+    cassert_no_null(form->glayout);
+    control = flayout_search_gui_control(form->flayout, form->glayout, cell_name);
+    if (control != NULL)
+    {
+        R2Df frame = window_control_frame(window, control);
+        frame.pos = window_client_to_screen(window, frame.pos);
+        return frame;
+    }
+
+    return kR2D_ZEROf;
+}

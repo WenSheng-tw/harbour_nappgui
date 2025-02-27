@@ -52,6 +52,16 @@ HB_FUNC(NAP_FORM_ONCLICK)
 
 /*---------------------------------------------------------------------------*/
 
+HB_FUNC(NAP_FORM_INSERT_TEXT)
+{
+    GtNapForm *form = cast(hb_parptr(1), GtNapForm);
+    const char_t *cell_name = hb_parcx(2);
+    HB_ITEM *text_block = hb_param(3, HB_IT_BLOCK | HB_IT_STRING);
+    hb_gtnap_form_insert_text(form, cell_name, text_block);
+}
+
+/*---------------------------------------------------------------------------*/
+
 HB_FUNC(NAP_FORM_MODAL)
 {
     GtNapForm *form = cast(hb_parptr(1), GtNapForm);
@@ -67,6 +77,28 @@ HB_FUNC(NAP_FORM_STOP_MODAL)
     GtNapForm *form = cast(hb_parptr(1), GtNapForm);
     uint32_t value = hb_parni(2);
     hb_gtnap_form_stop_modal(form, value);
+}
+
+/*---------------------------------------------------------------------------*/
+
+HB_FUNC(NAP_FORM_CONTROL_FRAME)
+{
+    GtNapForm *form = cast(hb_parptr(1), GtNapForm);
+    const char_t *cell_name = hb_parcx(2);
+    R2Df frame = hb_gtnap_form_control_frame(form, cell_name);
+    hb_reta(4);
+    hb_storvnl((int32_t)frame.pos.x, -1, 1);
+    hb_storvnl((int32_t)frame.pos.y, -1, 2);
+    hb_storvnl((int32_t)frame.size.width, -1, 3);
+    hb_storvnl((int32_t)frame.size.height, -1, 4);
+}
+
+/*---------------------------------------------------------------------------*/
+
+HB_FUNC(NAP_FORM_UPDATE)
+{
+    GtNapForm *form = cast(hb_parptr(1), GtNapForm);
+    hb_gtnap_form_update(form);
 }
 
 /*---------------------------------------------------------------------------*/

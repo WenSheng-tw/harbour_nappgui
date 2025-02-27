@@ -13,6 +13,8 @@
 #include <gui/gui.hxx>
 
 typedef struct _gtnap_form_t GtNapForm;
+typedef struct _gtnap_menuitem_t GtNapMenuItem;
+typedef struct _gtnap_menu_t GtNapMenu;
 
 HB_EXTERN_BEGIN
 
@@ -182,6 +184,9 @@ extern uint32_t hb_gtnap_cualib_window_current_edit(void);
 extern void hb_gtnap_cualib_default_button(const uint32_t nDefault);
 /*------------------------ */
 
+/* ------------------- */
+/* GTNAP/Forms support */
+/* ------------------- */
 extern GtNapForm *hb_gtnap_form_load(const char_t *pathname);
 
 extern void hb_gtnap_form_title(GtNapForm *form, HB_ITEM *text_block);
@@ -192,11 +197,51 @@ extern void hb_gtnap_form_dbind_store(GtNapForm *form);
 
 extern void hb_gtnap_form_OnClick(GtNapForm *form, const char_t *button_cell_name, HB_ITEM *click_block);
 
+extern void hb_gtnap_form_insert_text(GtNapForm *form, const char_t *cell_name, HB_ITEM *text_block);
+
 extern uint32_t hb_gtnap_form_modal(GtNapForm *form, const char_t *resource_path);
 
 extern void hb_gtnap_form_stop_modal(GtNapForm *form, const uint32_t value);
 
+extern R2Df hb_gtnap_form_control_frame(GtNapForm *form, const char_t *cell_name);
+
+extern void hb_gtnap_form_update(GtNapForm *form);
+
 extern void hb_gtnap_form_destroy(GtNapForm **form);
+
+/* --------------------------- */
+/* GTNAP/Dynamic menus support */
+/* --------------------------- */
+extern GtNapMenu *hb_gtnap_menu_create(void);
+
+extern void hb_gtnap_menu_destroy(GtNapMenu *menu);
+
+extern void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item);
+
+extern void hb_gtnap_menu_ins_item(GtNapMenu *menu, const uint32_t pos, GtNapMenuItem *item);
+
+extern void hb_gtnap_menu_del_item(GtNapMenu *menu, const uint32_t pos);
+
+extern uint32_t hb_gtnap_menu_count(const GtNapMenu *menu);
+
+extern GtNapMenuItem *hb_gtnap_menu_get_item(GtNapMenu *menu, const uint32_t index);
+
+extern void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form);
+
+extern bool_t hb_gtnap_is_menubar(const GtNapMenu *menu);
+
+extern void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, const int32_t y);
+
+
+extern GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_path, HB_ITEM *click_block);
+
+extern GtNapMenuItem *hb_gtnap_menuitem_separator(void);
+
+extern void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu);
+
+extern String *hb_gtnap_menuitem_get_text(const GtNapMenuItem *item);
+
+extern GtNapMenu *hb_gtnap_menuitem_get_submenu(GtNapMenuItem *item);
 
 HB_EXTERN_END
 

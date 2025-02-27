@@ -22,6 +22,8 @@
 #include <gui/imageview.h>
 #include <gui/label.h>
 #include <gui/layout.h>
+#include <gui/menu.h>
+#include <gui/menuitem.h>
 #include <gui/panel.h>
 #include <gui/tableview.h>
 #include <gui/textview.h>
@@ -90,6 +92,7 @@ struct _gtnap_callback_t
 {
     GtNapWindow *gtwin;
     GtNapForm *form;
+    GtNapMenuItem *menuitem;
     HB_ITEM *block;
     int32_t key;
     uint32_t autoclose_id;
@@ -241,6 +244,7 @@ struct _gtnap_t
     uint32_t modal_delay_seconds;
     GtNapWindow *modal_time_window;
     ArrPt(GtNapWindow) *windows;
+    ArrPt(GtNapCallback) *menu_callbacks;
     String *debugger_path;
     bool_t debugger_visible;
     GtNapDebugger *debugger;
@@ -577,7 +581,9 @@ static void i_gtnap_destroy(GtNap **gtnap)
     cassert_no_null(gtnap);
     cassert_no_null(*gtnap);
     cassert(*gtnap == GTNAP_GLOBAL);
+    cassert(arrpt_size((*gtnap)->menu_callbacks, GtNapCallback) == 0);
     arrpt_destroy(&(*gtnap)->windows, i_destroy_gtwin, GtNapWindow);
+    arrpt_destroy(&(*gtnap)->menu_callbacks, i_destroy_callback, GtNapCallback);
     font_destroy(&(*gtnap)->global_font);
     font_destroy(&(*gtnap)->button_font);
     font_destroy(&(*gtnap)->edit_font);
@@ -771,7 +777,6 @@ static Listener *i_gtnap_listener(HB_ITEM *block, const int32_t key, const uint3
     cassert_no_null(gtwin);
     callback->block = block ? hb_itemNew(block) : NULL;
     callback->gtwin = gtwin;
-    callback->form = NULL;
     callback->key = key;
     callback->autoclose_id = autoclose_id;
     arrpt_append(gtwin->callbacks, callback, GtNapCallback);
@@ -1170,6 +1175,7 @@ static GtNap *i_gtnap_create(void)
     GTNAP_GLOBAL->rows = INIT_ROWS;
     GTNAP_GLOBAL->cols = INIT_COLS;
     GTNAP_GLOBAL->windows = arrpt_create(GtNapWindow);
+    GTNAP_GLOBAL->menu_callbacks = arrpt_create(GtNapCallback);
     GTNAP_GLOBAL->date_digits = (hb_setGetCentury() == (HB_BOOL)HB_TRUE) ? 8 : 6;
     GTNAP_GLOBAL->date_chars = GTNAP_GLOBAL->date_digits + 2;
 
@@ -5012,9 +5018,7 @@ static Listener *i_gtnap_form_listener(HB_ITEM *block, GtNapForm *form, FPtr_gtn
     GtNapCallback *callback = heap_new0(GtNapCallback);
     cassert_no_null(form);
     callback->block = block ? hb_itemNew(block) : NULL;
-    callback->gtwin = NULL;
     callback->form = form;
-    callback->gtwin = NULL;
     callback->key = INT32_MAX;
     callback->autoclose_id = UINT32_MAX;
     arrpt_append(form->callbacks, callback, GtNapCallback);
@@ -5037,6 +5041,16 @@ void hb_gtnap_form_OnClick(GtNapForm *form, const char_t *button_cell_name, HB_I
         bind->gui_id = str_c(button_cell_name);
         bind->listener = listener;
     }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_form_insert_text(GtNapForm *form, const char_t *cell_name, HB_ITEM *text_block)
+{
+    String *text = hb_block_to_utf8(text_block);
+    cassert_no_null(form);
+    nform_add_control_str(form->form, cell_name, tc(text));
+    str_destroy(&text);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -5083,6 +5097,23 @@ void hb_gtnap_form_stop_modal(GtNapForm *form, const uint32_t value)
 
 /*---------------------------------------------------------------------------*/
 
+R2Df hb_gtnap_form_control_frame(GtNapForm *form, const char_t *cell_name)
+{
+    cassert_no_null(form);
+    return nform_get_control_frame(form->form, cell_name, form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_form_update(GtNapForm *form)
+{
+    cassert_no_null(form);
+    if (form->window != NULL)
+        window_update(form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void hb_gtnap_form_destroy(GtNapForm **form)
 {
     cassert_no_null(form);
@@ -5094,6 +5125,209 @@ void hb_gtnap_form_destroy(GtNapForm **form)
     arrpt_destroy(&(*form)->callbacks, i_destroy_callback, GtNapCallback);
     nform_destroy(&(*form)->form);
     heap_delete(form, GtNapForm);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenu *hb_gtnap_menu_create(void)
+{
+    Menu *menu = menu_create();
+    return cast(menu, GtNapMenu);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_menu_callbacks(Menu *menu);
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_item_callbacks(MenuItem *item)
+{
+    Menu *submenu = menuitem_get_submenu(item);
+    uint32_t callback_id = UINT32_MAX;
+
+    arrpt_foreach(callback, GTNAP_GLOBAL->menu_callbacks, GtNapCallback)
+        if (callback->menuitem == cast(item, GtNapMenuItem))
+        {
+            callback_id = callback_i;
+            break;
+        }
+    arrpt_end()
+
+    if (callback_id != UINT32_MAX)
+        arrpt_delete(GTNAP_GLOBAL->menu_callbacks, callback_id, i_destroy_callback, GtNapCallback);
+
+    if (submenu != NULL)
+        i_remove_menu_callbacks(submenu);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_menu_callbacks(Menu *menu)
+{
+    uint32_t i, n = menu_count(menu);
+    for (i = 0; i < n; ++i)
+    {
+        MenuItem *item = menu_get_item(menu, i);
+        i_remove_item_callbacks(item);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_destroy(GtNapMenu *menu)
+{
+    i_remove_menu_callbacks(cast(menu, Menu));
+    menu_destroy(dcast(&menu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_add_item(GtNapMenu *menu, GtNapMenuItem *item)
+{
+    menu_add_item(cast(menu, Menu), cast(item, MenuItem));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_ins_item(GtNapMenu *menu, const uint32_t pos, GtNapMenuItem *item)
+{
+    menu_ins_item(cast(menu, Menu), pos, cast(item, MenuItem));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_del_item(GtNapMenu *menu, const uint32_t pos)
+{
+    MenuItem *item = menu_get_item(cast(menu, Menu), pos);
+    i_remove_item_callbacks(item);
+    menu_del_item(cast(menu, Menu), pos);
+}
+
+/*---------------------------------------------------------------------------*/
+
+uint32_t hb_gtnap_menu_count(const GtNapMenu *menu)
+{
+    return menu_count(cast(menu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menu_get_item(GtNapMenu *menu, const uint32_t index)
+{
+    MenuItem *item = menu_get_item(cast(menu, Menu), index);
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menubar(GtNapMenu *menu, GtNapForm *form)
+{
+    cassert_no_null(form);
+    osapp_menubar(cast(menu, Menu), form->window);
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool_t hb_gtnap_is_menubar(const GtNapMenu *menu)
+{
+    return menu_is_menubar(cast_const(menu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menu_popup(GtNapMenu *menu, GtNapForm *form, const int32_t x, const int32_t y)
+{
+    cassert_no_null(form);
+    menu_launch(cast(menu, Menu), form->window, v2df((real32_t)x, (real32_t)y));
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnMenuClick(GtNapCallback *callback, Event *e)
+{
+    cassert_no_null(callback);
+    unref(e);
+    if (callback->block != NULL)
+    {
+        /* The menuitem itself will be allways the first param in click callback */
+        PHB_ITEM pItem = hb_itemPutPtr(NULL, callback->menuitem);
+        PHB_ITEM ritem = hb_itemDo(callback->block, 1, pItem);
+        hb_itemRelease(pItem);
+        hb_itemRelease(ritem);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static Listener *i_gtnap_menu_listener(HB_ITEM *block, GtNapMenuItem *item)
+{
+    GtNapCallback *callback = heap_new0(GtNapCallback);
+    cassert_no_null(item);
+    callback->block = block ? hb_itemNew(block) : NULL;
+    callback->menuitem = item;
+    callback->key = INT32_MAX;
+    callback->autoclose_id = UINT32_MAX;    
+    arrpt_append(GTNAP_GLOBAL->menu_callbacks, callback, GtNapCallback);
+    return listener(callback, i_OnMenuClick, GtNapCallback);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menuitem_create(HB_ITEM *text_block, const char_t *icon_path, HB_ITEM *click_block)
+{
+    MenuItem *item = menuitem_create();
+    String *text = hb_block_to_utf8(text_block);
+    menuitem_text(item, tc(text));
+
+    if (str_empty_c(icon_path) == FALSE)
+    {
+        Image *image = image_from_file(icon_path, NULL);
+        if (image != NULL)
+        {
+            menuitem_image(item, image);
+            image_destroy(&image);
+        }
+    }
+
+    {
+        Listener *listener = i_gtnap_menu_listener(click_block, cast(item, GtNapMenuItem));
+        menuitem_OnClick(item, listener);
+    }
+
+    str_destroy(&text);
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenuItem *hb_gtnap_menuitem_separator(void)
+{
+    MenuItem *item = menuitem_separator();
+    return cast(item, GtNapMenuItem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void hb_gtnap_menuitem_submenu(GtNapMenuItem *item, GtNapMenu *submenu)
+{
+    menuitem_submenu(cast(item, MenuItem), dcast(&submenu, Menu));
+}
+
+/*---------------------------------------------------------------------------*/
+
+String *hb_gtnap_menuitem_get_text(const GtNapMenuItem *item)
+{
+    const char_t *text = menuitem_get_text(cast_const(item, MenuItem));
+    return i_utf8_to_cp_string(text);
+}
+
+/*---------------------------------------------------------------------------*/
+
+GtNapMenu *hb_gtnap_menuitem_get_submenu(GtNapMenuItem *item)
+{
+    Menu *menu = menuitem_get_submenu(cast(item, MenuItem));
+    return cast(menu, GtNapMenu);
 }
 
 /*---------------------------------------------------------------------------*/

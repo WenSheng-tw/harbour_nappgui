@@ -14,6 +14,8 @@ _nforms_api Window *nform_window(const NForm *form, const uint32_t flags, const 
 
 _nforms_api void nform_set_control_str(NForm *form, const char_t *cell_name, const char_t *value);
 
+_nforms_api void nform_add_control_str(NForm *form, const char_t *cell_name, const char_t *value);
+
 _nforms_api void nform_set_control_bool(NForm *form, const char_t *cell_name, const bool_t value);
 
 _nforms_api void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t value);
@@ -29,5 +31,7 @@ _nforms_api bool_t nform_get_control_int(const NForm *form, const char_t *cell_n
 _nforms_api bool_t nform_get_control_real(const NForm *form, const char_t *cell_name, real32_t *value);
 
 _nforms_api bool_t nform_set_listener(NForm *form, const char_t *cell_name, Listener *listener);
+
+_nforms_api R2Df nform_get_control_frame(NForm *form, const char_t *cell_name, Window *window);
 
 __END_C

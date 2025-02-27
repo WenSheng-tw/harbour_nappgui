@@ -35,7 +35,7 @@ static void i_dbind(void)
     dbind_enum(celltype_t, ekCELL_TYPE_IMAGE, "");
     dbind_enum(celltype_t, ekCELL_TYPE_SLIDER, "");
     dbind_enum(celltype_t, ekCELL_TYPE_PROGRESS, "");
-    dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");    
+    dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");
     dbind_enum(halign_t, ekHALIGN_LEFT, "Left");
     dbind_enum(halign_t, ekHALIGN_CENTER, "Center");
     dbind_enum(halign_t, ekHALIGN_RIGHT, "Right");
@@ -62,7 +62,7 @@ static void i_dbind(void)
     dbind(FText, bool_t, read_only);
     dbind(FText, real32_t, min_width);
     dbind(FText, real32_t, min_height);
-    dbind(FImage, String*, path);
+    dbind(FImage, String *, path);
     dbind(FImage, scale_t, scale);
     dbind(FImage, real32_t, min_width);
     dbind(FImage, real32_t, min_height);
@@ -107,7 +107,7 @@ static void i_dbind(void)
     dbind_increment(FButton, real32_t, min_width, 1);
     dbind_precision(FButton, real32_t, min_width, 1);
     dbind_range(FButton, real32_t, min_width, 10, 1000);
-    
+
     dbind_default(FLabel, bool_t, multiline, FALSE);
     dbind_default(FLabel, real32_t, min_width, 0);
     dbind_increment(FLabel, real32_t, min_width, 1);
@@ -130,8 +130,8 @@ static void i_dbind(void)
     dbind_precision(FText, real32_t, min_height, 1);
     dbind_range(FText, real32_t, min_height, 10, 1000);
 
-	dbind_default(FImage, scale_t, scale, ekSCALE_ASPECT);
-	dbind_default(FImage, real32_t, min_width, 100);
+    dbind_default(FImage, scale_t, scale, ekSCALE_ASPECT);
+    dbind_default(FImage, real32_t, min_width, 100);
     dbind_increment(FImage, real32_t, min_width, 1);
     dbind_precision(FImage, real32_t, min_width, 1);
     dbind_range(FImage, real32_t, min_width, 10, 1000);
@@ -140,7 +140,7 @@ static void i_dbind(void)
     dbind_precision(FImage, real32_t, min_height, 1);
     dbind_range(FImage, real32_t, min_height, 10, 1000);
 
-	dbind_default(FSlider, real32_t, min_width, 100);
+    dbind_default(FSlider, real32_t, min_width, 100);
     dbind_increment(FSlider, real32_t, min_width, 1);
     dbind_precision(FSlider, real32_t, min_width, 1);
     dbind_range(FSlider, real32_t, min_width, 10, 1000);
@@ -217,9 +217,9 @@ void nflib_finish(void)
 
 /*---------------------------------------------------------------------------*/
 
-const Image* nflib_default_image(void)
+const Image *nflib_default_image(void)
 {
     if (i_RESPACK == NULL)
         i_RESPACK = nflib_res_respack("");
-	return image_from_resource(i_RESPACK, NOIMAGE_PNG);
+    return image_from_resource(i_RESPACK, NOIMAGE_PNG);
 }
