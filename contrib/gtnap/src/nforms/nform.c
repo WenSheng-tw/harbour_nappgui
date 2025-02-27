@@ -304,7 +304,7 @@ bool_t nform_get_control_real(const NForm *form, const char_t *cell_name, real32
         }
         else if (progress != NULL)
         {
-            *value = .5f;//progress_get_value(progress);
+            *value = .5f;
         }
     }
 
@@ -349,4 +349,3 @@ R2Df nform_get_control_frame(NForm *form, const char_t *cell_name, Window *windo
 
     return kR2D_ZEROf;
 }
-

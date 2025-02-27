@@ -553,7 +553,7 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const R2Df *cell_r
     real32_t ratio_x = 1.f;
     real32_t ratio_y = 1.f;
     cassert_no_null(cell_rect);
-    switch(scale)
+    switch (scale)
     {
     case ekSCALE_NONE:
     case ekSCALE_FIT:
@@ -575,7 +575,7 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const R2Df *cell_r
             ratio_x = ratio_y;
         break;
 
-    cassert_default();
+        cassert_default();
     }
 
     {
@@ -630,7 +630,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_fill_color(ctx, i_BGCOLOR);
                 draw_text_color(ctx, color);
                 draw_rect(ctx, ekFILL, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
-                
+
                 if (fcell->widget.label->min_width > 0)
                     draw_text_width(ctx, fcell->widget.label->min_width);
 
@@ -725,12 +725,12 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 draw_line_color(ctx, i_MAIN_COLOR);
                 break;
             }
-    
-			case ekCELL_TYPE_IMAGE:
+
+            case ekCELL_TYPE_IMAGE:
             {
                 color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
                 const Image *image = i_is_cell_sel(hover, dlayout, i, j) ? dcell->simage : dcell->nimage;
-                
+
                 if (image != NULL)
                 {
                     T2Df t2d;
@@ -805,12 +805,6 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
             }
-
-            //{
-            //    color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
-            //    draw_line_color(ctx, color);
-            //    draw_r2df(ctx, ekSTROKE, &dcell->rect);
-            //}
 
             dcell += 1;
         }

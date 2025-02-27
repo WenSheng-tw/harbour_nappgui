@@ -1762,40 +1762,13 @@ static bool_t i_nested_member(const DBind *stbind, const DBind *bind, const DBin
 
 /*---------------------------------------------------------------------------*/
 
-static void i_binary_defaults_destroy(const DBind *bind)
-{
-    cassert_no_null(bind);
-    cassert(bind->type == ekDTYPE_BINARY);
-    if (i_DATABIND.binds != NULL)
-    {
-        arrpt_foreach(dbind, i_DATABIND.binds, DBind)
-            if (dbind->type == ekDTYPE_STRUCT)
-            {
-                arrst_foreach(member, dbind->props.structp.members, StructMember)
-                    cassert_no_null(member->bind);
-                    if (member->bind == bind)
-                    {
-                        if (member->attr.binaryt.def != NULL)
-                        {
-                            cassert_no_nullf(bind->props.binaryp.func_destroy);
-                            bind->props.binaryp.func_destroy(&member->attr.binaryt.def);
-                        }
-                    }
-                arrst_end()
-            }
-        arrpt_end()
-    }
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void i_stbind_defaults_destroy(const DBind *stbind, const DBind *bind)
 {
     cassert_no_null(stbind);
     cassert(stbind->type == ekDTYPE_STRUCT);
     arrst_foreach(member, stbind->props.structp.members, StructMember)
         cassert_no_null(member->bind);
-        switch(member->bind->type)
+        switch (member->bind->type)
         {
         case ekDTYPE_STRING:
             if (member->bind == bind)
@@ -1842,7 +1815,7 @@ static void i_stbind_defaults_destroy(const DBind *stbind, const DBind *bind)
         case ekDTYPE_ENUM:
             break;
         case ekDTYPE_UNKNOWN:
-        cassert_default();
+            cassert_default();
         }
     arrst_end()
 }
@@ -1869,16 +1842,16 @@ static dbindst_t i_try_unreg(const DBind *bind, const uint32_t alias_id)
     {
         cassert_no_null(bind);
 
-        /* 
-         * Remove deadlock in this struct. If the structure is nested within itself, 
-         * we must remove the member causing the deadlock. Also all default objects 
+        /*
+         * Remove deadlock in this struct. If the structure is nested within itself,
+         * we must remove the member causing the deadlock. Also all default objects
          * containing nested objects of this type.
         */
         if (bind->type == ekDTYPE_STRUCT)
         {
             const DBind *stbind = NULL;
             uint32_t member_id = UINT32_MAX;
-            while(i_nested_member(bind, bind, &stbind, &member_id) == TRUE)
+            while (i_nested_member(bind, bind, &stbind, &member_id) == TRUE)
             {
                 cassert(stbind->type == ekDTYPE_STRUCT);
                 arrpt_foreach(nbind, i_DATABIND.binds, DBind)
