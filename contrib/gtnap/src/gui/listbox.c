@@ -896,6 +896,19 @@ const char_t *listbox_text(const ListBox *listbox, const uint32_t index)
 
 /*---------------------------------------------------------------------------*/
 
+uint32_t listbox_get_selected(const ListBox *listbox)
+{
+    LData *data = view_get_data(cast(listbox, View), LData);
+    cassert_no_null(data);
+    arrst_foreach_const(elem, data->elems, PElem)
+        if (elem->select == TRUE)
+            return elem_i;
+    arrst_end()
+    return UINT32_MAX;
+}
+
+/*---------------------------------------------------------------------------*/
+
 bool_t listbox_selected(const ListBox *listbox, uint32_t index)
 {
     LData *data = view_get_data(cast(listbox, View), LData);

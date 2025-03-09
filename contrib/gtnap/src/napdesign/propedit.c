@@ -836,33 +836,83 @@ static void i_OnPopUpAdd(PropData *data, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnPopUpRemove(PropData *data, Event *e)
+{
+    uint32_t index = UINT32_MAX;
+    cassert_no_null(data);
+    index = listbox_get_selected(data->popup_list);
+    if (index != UINT32_MAX)
+    {
+        /* TODO Uncomment when popup_del_item implemented */
+        /*
+        FPopUp *fpopup = layout_dbind_get_obj(data->popup_layout, FPopUp);
+        listbox_del_elem(data->popup_list, index);
+        arrst_delete(fpopup->elems, index, i_remove_elem, FElem);
+        dform_synchro_popup_del(data->form, &data->sel, index);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+        */
+    }
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_elem(FElem *elem)
+{
+    dbind_remove(elem, FElem);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnPopUpClear(PropData *data, Event *e)
+{
+    FPopUp *fpopup = NULL;
+    cassert_no_null(data);
+    fpopup = layout_dbind_get_obj(data->popup_layout, FPopUp);
+    arrst_clear(fpopup->elems, i_remove_elem, FElem);
+    listbox_clear(data->popup_list);
+    dform_synchro_popup_clear(data->form, &data->sel);
+    dform_compose(data->form);
+    designer_canvas_update(data->app);
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_popup_layout(PropData *data)
 {
     Layout *layout1 = layout_create(1, 5);
-    Layout *layout2 = layout_create(2, 1);
+    Layout *layout2 = layout_create(3, 1);
     Label *label1 = label_create();
     Label *label2 = label_create();
     ListBox *list = listbox_create();
     Button *button1 = button_flat();
     Button *button2 = button_flat();
+    Button *button3 = button_flat();
     cassert_no_null(data);
     label_text(label1, "PopUp properties");
     label_text(label2, "Elements");
     button_image(button1, cast_const(PLUS16_PNG, Image));
     button_image(button2, cast_const(ERROR16_PNG, Image));
+    button_image(button3, cast_const(RETRY16_PNG, Image));
+    button_tooltip(button1, "Add a new element");
+    button_tooltip(button2, "Remove current element");
+    button_tooltip(button3, "Clear all elements");
     button_OnClick(button1, listener(data, i_OnPopUpAdd, PropData));
+    button_OnClick(button2, listener(data, i_OnPopUpRemove, PropData));
+    button_OnClick(button3, listener(data, i_OnPopUpClear, PropData));
     layout_label(layout1, label1, 0, 0);
     layout_label(layout1, label2, 0, 1);
     layout_listbox(layout1, list, 0, 2);
     layout_button(layout2, button1, 0, 0);
     layout_button(layout2, button2, 1, 0);
+    layout_button(layout2, button3, 2, 0);
     layout_layout(layout1, layout2, 0, 3);
     layout_halign(layout1, 0, 3, ekLEFT);
     layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
     layout_vexpand(layout1, 4);
-    //cell_dbind(layout_cell(layout2, 1, 0), FProgress, real32_t, min_width);
-    //layout_dbind(layout1, listener(data, i_OnProgressNotify, PropData), FProgress);
-    layout_dbind(layout1, /*listener(data, i_OnProgressNotify, PropData)*/NULL, FPopUp);
+    layout_dbind(layout1, NULL, FPopUp);
     data->popup_layout = layout1;
     data->popup_list = list;
     return layout1;

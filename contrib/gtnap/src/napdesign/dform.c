@@ -963,6 +963,21 @@ void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_popup_clear(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    PopUp *popup = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_POPUP);
+    i_need_save(form);
+    popup = layout_get_popup(sel->glayout, sel->col, sel->row);
+    popup_clear(popup);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel)
 {
     cassert_no_null(form);
