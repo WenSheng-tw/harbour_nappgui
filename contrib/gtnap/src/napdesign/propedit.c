@@ -4,6 +4,8 @@
 #include "designer.h"
 #include "dlayout.h"
 #include "dform.h"
+#include "dialogs.h"
+#include "res_designer.h"
 #include <nflib/flayout.h>
 #include <gui/gui.h>
 #include <gui/cell.h>
@@ -12,16 +14,20 @@
 #include <gui/edit.h>
 #include <gui/label.h>
 #include <gui/layout.h>
+#include <gui/listbox.h>
 #include <gui/panel.h>
 #include <gui/popup.h>
 #include <gui/view.h>
 #include <gui/updown.h>
 #include <draw2d/image.h>
+#include <core/arrst.h>
+#include <core/dbind.h>
 #include <core/event.h>
 #include <core/heap.h>
 #include <core/strings.h>
 #include <sewer/bstd.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 typedef struct _propdata_t PropData;
 
@@ -44,6 +50,7 @@ struct _propdata_t
     Layout *slider_layout;
     Layout *progress_layout;
     Layout *popup_layout;
+    ListBox *popup_list;
     Cell *column_margin_cell;
     Cell *row_margin_cell;
     Label *layout_geom_label;
@@ -797,29 +804,67 @@ static Layout *i_progress_layout(PropData *data)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnPopUpAdd(PropData *data, Event *e)
+{
+    Window *window = NULL;
+    const char_t *folder_path = NULL;
+    FElem *elem = NULL;
+    cassert_no_null(data);
+    window = designer_main_window(data->app);
+    folder_path = designer_folder_path(data->app);
+    elem = dialog_new_elem(window, folder_path);
+    if (elem != NULL)
+    {
+        FPopUp *fpopup = layout_dbind_get_obj(data->popup_layout, FPopUp);
+        FElem *nelem = arrst_new(fpopup->elems, FElem);
+        String *path = NULL;
+        Image *image = NULL;
+        nelem->text = str_copy(elem->text);
+        nelem->iconpath = str_copy(elem->iconpath);
+        path = str_cpath("%s/%s", folder_path, tc(elem->iconpath));
+        image = image_from_file(tc(path), NULL);
+        listbox_add_elem(data->popup_list, tc(nelem->text), image);
+        dform_synchro_popup_add(data->form, &data->sel, image);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+        str_destroy(&path);
+        ptr_destopt(image_destroy, &image, Image);
+        dbind_destroy(&elem, FElem);
+    }
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_popup_layout(PropData *data)
 {
-    Layout *layout1 = layout_create(1, 2);
-    //Layout *layout2 = layout_create(2, 1);
-    //Layout *layout3 = i_value_updown_layout();
+    Layout *layout1 = layout_create(1, 5);
+    Layout *layout2 = layout_create(2, 1);
     Label *label1 = label_create();
-//    Label *label2 = label_create();
+    Label *label2 = label_create();
+    ListBox *list = listbox_create();
+    Button *button1 = button_flat();
+    Button *button2 = button_flat();
     cassert_no_null(data);
     label_text(label1, "PopUp properties");
-    //label_text(label2, "MWidth");
+    label_text(label2, "Elements");
+    button_image(button1, cast_const(PLUS16_PNG, Image));
+    button_image(button2, cast_const(ERROR16_PNG, Image));
+    button_OnClick(button1, listener(data, i_OnPopUpAdd, PropData));
     layout_label(layout1, label1, 0, 0);
-    //layout_label(layout2, label2, 0, 0);
-    //layout_layout(layout2, layout3, 1, 0);
-    //layout_layout(layout1, layout2, 0, 1);
-    //layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
-    //layout_hmargin(layout2, 0, i_GRID_HMARGIN);
-    //layout_hexpand(layout2, 1);
-    layout_vexpand(layout1, 1);
+    layout_label(layout1, label2, 0, 1);
+    layout_listbox(layout1, list, 0, 2);
+    layout_button(layout2, button1, 0, 0);
+    layout_button(layout2, button2, 1, 0);
+    layout_layout(layout1, layout2, 0, 3);
+    layout_halign(layout1, 0, 3, ekLEFT);
+    layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
+    layout_vexpand(layout1, 4);
     //cell_dbind(layout_cell(layout2, 1, 0), FProgress, real32_t, min_width);
     //layout_dbind(layout1, listener(data, i_OnProgressNotify, PropData), FProgress);
     layout_dbind(layout1, /*listener(data, i_OnProgressNotify, PropData)*/NULL, FPopUp);
-
     data->popup_layout = layout1;
+    data->popup_list = list;
     return layout1;
 }
 

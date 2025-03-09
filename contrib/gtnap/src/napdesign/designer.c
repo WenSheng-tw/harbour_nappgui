@@ -474,7 +474,7 @@ static void i_OnRenameFormClick(Designer *app, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
-static Layout *i_tools_layout(Designer *app, ResPack *pack)
+static Layout *i_tools_layout(Designer *app)
 {
     Layout *layout = layout_create(9, 1);
     Button *button1 = button_flat();
@@ -486,14 +486,14 @@ static Layout *i_tools_layout(Designer *app, ResPack *pack)
     Button *button7 = button_flat();
     Button *button8 = button_flat();
     cassert_no_null(app);
-    button_image(button1, image_from_resource(pack, FOLDER24_PNG));
-    button_image(button2, image_from_resource(pack, DISK24_PNG));
-    button_image(button3, image_from_resource(pack, PLUS24_PNG));
-    button_image(button4, image_from_resource(pack, EDIT24_PNG));
-    button_image(button5, image_from_resource(pack, SEARCH24_PNG));
-    button_image(button6, image_from_resource(pack, ERROR24_PNG));
-    button_image(button7, image_from_resource(pack, PLUS24_PNG));
-    button_image(button8, image_from_resource(pack, ERROR24_PNG));
+    button_image(button1, cast_const(FOLDER24_PNG, Image));
+    button_image(button2, cast_const(DISK24_PNG, Image));
+    button_image(button3, cast_const(PLUS24_PNG, Image));
+    button_image(button4, cast_const(EDIT24_PNG, Image));
+    button_image(button5, cast_const(SEARCH24_PNG, Image));
+    button_image(button6, cast_const(ERROR24_PNG, Image));
+    button_image(button7, cast_const(PLUS24_PNG, Image));
+    button_image(button8, cast_const(ERROR24_PNG, Image));
     button_OnClick(button1, listener(app, i_OnOpenFormsClick, Designer));
     button_OnClick(button2, listener(app, i_OnSaveFormsClick, Designer));
     button_OnClick(button3, listener(app, i_OnAddFormClick, Designer));
@@ -776,10 +776,10 @@ static Layout *i_statusbar_layout(Designer *app)
 
 /*---------------------------------------------------------------------------*/
 
-static Layout *i_main_layout(Designer *app, ResPack *pack)
+static Layout *i_main_layout(Designer *app)
 {
     Layout *layout1 = layout_create(1, 3);
-    Layout *layout2 = i_tools_layout(app, pack);
+    Layout *layout2 = i_tools_layout(app);
     Layout *layout3 = i_middle_layout(app);
     Layout *layout4 = i_statusbar_layout(app);
     layout_layout(layout1, layout2, 0, 0);
@@ -803,10 +803,10 @@ static Layout *i_main_layout(Designer *app, ResPack *pack)
 
 /*---------------------------------------------------------------------------*/
 
-static Panel *i_panel(Designer *app, ResPack *pack)
+static Panel *i_panel(Designer *app)
 {
     Panel *panel = panel_create();
-    Layout *layout = i_main_layout(app, pack);
+    Layout *layout = i_main_layout(app);
     panel_layout(panel, layout);
     return panel;
 }
@@ -885,16 +885,18 @@ static void i_OnClose(Designer *app, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
-static Designer *i_app(ResPack *pack)
+static Designer *i_app(void)
 {
     Designer *app = heap_new0(Designer);
+    gui_respack(res_designer_respack);
+    gui_language("");
     nflib_start();
     i_dbind();
     dialog_dbind();
     i_load_config(app);
     dlayout_global_init();
     app->forms = arrpt_create(DForm);
-    app->add_icon = image_copy(image_from_resource(pack, PLUS16_PNG));
+    app->add_icon = image_copy(gui_image(PLUS16_PNG));
     return app;
 }
 
@@ -902,9 +904,8 @@ static Designer *i_app(ResPack *pack)
 
 static Designer *i_create(void)
 {
-    ResPack *pack = res_designer_respack("");
-    Designer *app = i_app(pack);
-    Panel *panel = i_panel(app, pack);
+    Designer *app = i_app();
+    Panel *panel = i_panel(app);
     app->window = window_create(ekWINDOW_STDRES);
     window_panel(app->window, panel);
     window_title(app->window, "GTNAP Designer");
@@ -914,7 +915,6 @@ static Designer *i_create(void)
     window_show(app->window);
     layout_dbind(app->widgets_layout, NULL, Designer);
     layout_dbind_obj(app->widgets_layout, app, Designer);
-    respack_destroy(&pack);
     i_init_forms(app, tc(app->folder_path));
     return app;
 }

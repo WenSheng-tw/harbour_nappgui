@@ -946,19 +946,19 @@ void dform_synchro_progress(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-void dform_synchro_popup(DForm *form, const DSelect *sel)
+void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image)
 {
     FCell *cell = i_sel_fcell(sel);
     PopUp *popup = NULL;
+    const FElem *elem = NULL;
     cassert_no_null(form);
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_POPUP);
     i_need_save(form);
     popup = layout_get_popup(sel->glayout, sel->col, sel->row);
-    popup_clear(popup);
-    /* TODO */
-    cassert(FALSE);
+    elem = arrst_last_const(cell->widget.popup->elems, FElem);
+    popup_add_elem(popup, tc(elem->text), image);
 }
 
 /*---------------------------------------------------------------------------*/
