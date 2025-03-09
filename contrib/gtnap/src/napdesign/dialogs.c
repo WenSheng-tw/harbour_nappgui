@@ -628,6 +628,41 @@ FProgress *dialog_new_progress(Window *parent, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+FPopUp *dialog_new_popup(Window *parent, const DSelect *sel)
+{
+    DialogData data;
+    Layout *layout1 = layout_create(1, 2);
+    Layout *layout2 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FPopUp *fpopup = dbind_create(FPopUp);
+    uint32_t ret = 0;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New Popup widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    layout_label(layout1, label1, 0, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&fpopup, FPopUp);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    return fpopup;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_grid_layout(void)
 {
     Layout *layout = layout_create(3, 2);

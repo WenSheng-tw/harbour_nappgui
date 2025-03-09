@@ -21,6 +21,7 @@
 #include <core/stream.h>
 #include <core/strings.h>
 #include <sewer/cassert.h>
+#include <sewer/bmem.h>
 #include <sewer/ptr.h>
 
 /*---------------------------------------------------------------------------*/
@@ -46,7 +47,136 @@ static void i_remove_row(FRow *row)
 
 static void i_remove_cell(FCell *cell)
 {
-    dbind_remove(cell, FCell);
+    /* TODO: Remove when 'dbind()' support unions */
+    cassert_no_null(cell);
+    str_destroy(&cell->name);
+    switch(cell->type) {
+    case ekCELL_TYPE_EMPTY:
+        break;
+
+    case ekCELL_TYPE_LABEL:
+        dbind_destroy(&cell->widget.label, FLabel);
+        break;
+
+    case ekCELL_TYPE_BUTTON:
+        dbind_destroy(&cell->widget.button, FButton);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_CHECK:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        dbind_destroy(&cell->widget.check, FCheck);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_EDIT:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        dbind_destroy(&cell->widget.edit, FEdit);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_LAYOUT:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        flayout_destroy(&cell->widget.layout);
+        break;
+
+    case ekCELL_TYPE_TEXT:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        dbind_destroy(&cell->widget.text, FText);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_IMAGE:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        dbind_destroy(&cell->widget.image, FImage);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_SLIDER:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        dbind_destroy(&cell->widget.slider, FSlider);
+        cassert(cell->widget.progress == NULL);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_PROGRESS:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        dbind_destroy(&cell->widget.progress, FProgress);
+        cassert(cell->widget.popup == NULL);
+        cassert(cell->widget.layout == NULL);
+        break;
+
+    case ekCELL_TYPE_POPUP:
+        cassert(cell->widget.label == NULL);
+        cassert(cell->widget.button == NULL);
+        cassert(cell->widget.check == NULL);
+        cassert(cell->widget.edit == NULL);
+        cassert(cell->widget.text == NULL);
+        cassert(cell->widget.image == NULL);
+        cassert(cell->widget.slider == NULL);
+        cassert(cell->widget.progress == NULL);
+        dbind_destroy(&cell->widget.popup, FPopUp);
+        cassert(cell->widget.layout == NULL);
+        break;
+    
+    cassert_default();
+
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -82,8 +212,12 @@ FLayout *flayout_create(const uint32_t ncols, const uint32_t nrows)
         uint32_t n = ncols * nrows, i = 0;
         for (i = 0; i < n; ++i)
         {
-            FCell *cell = arrst_new(layout->cells, FCell);
-            dbind_init(cell, FCell);
+            FCell *cell = arrst_new0(layout->cells, FCell);
+            cell->name = str_c("");
+            cell->type = ekCELL_TYPE_EMPTY;
+            cell->halign = ekHALIGN_LEFT;
+            cell->valign = ekVALIGN_TOP;
+            /* TODO: Use dbind_init() when dbind support unions */
         }
     }
 
@@ -231,6 +365,7 @@ static FPopUp *i_read_popup(Stream *stm)
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
+    bmem_zero(cell, FCell);
     cell->name = str_read(stm);
     cell->type = stm_read_enum(stm, celltype_t);
     cell->halign = stm_read_enum(stm, halign_t);
@@ -651,7 +786,8 @@ void flayout_remove_cell(FLayout *layout, const uint32_t col, const uint32_t row
     FCell *cell = i_cell(layout, col, row);
     cassert_no_null(cell);
     name = str_c(tc(cell->name));
-    dbind_remove(cell, FCell);
+    i_remove_cell(cell);
+    //dbind_remove(cell, FCell);
     cell->type = ekCELL_TYPE_EMPTY;
     str_upd(&cell->name, tc(name));
     str_destroy(&name);

@@ -187,6 +187,18 @@ static void i_dbind(void)
     dbind(FWidget, FPopUp *, popup);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
+
+    dbind_default(FWidget, FLabel *, label, NULL);
+    dbind_default(FWidget, FButton *, button, NULL);
+    dbind_default(FWidget, FCheck *, check, NULL);
+    dbind_default(FWidget, FEdit *, edit, NULL);
+    dbind_default(FWidget, FText *, text, NULL);
+    dbind_default(FWidget, FImage *, image, NULL);
+    dbind_default(FWidget, FSlider *, slider, NULL);
+    dbind_default(FWidget, FProgress *, progress, NULL);
+    dbind_default(FWidget, FPopUp *, popup, NULL);
+    dbind_default(FWidget, FLayout *, layout, NULL);
+
 }
 
 /*---------------------------------------------------------------------------*/

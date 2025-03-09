@@ -624,7 +624,31 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                     return FALSE;
                 }
             }
-    
+
+            case ekWIDGET_POPUP:
+            {
+                FPopUp *fpopup = dialog_new_popup(window, &sel);
+                if (fpopup != NULL)
+                {
+                    PopUp *popup = popup_create();
+                    cassert(arrst_size(fpopup->elems, FElem) == 0);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_popup(sel.flayout, fpopup, sel.col, sel.row);
+                    layout_popup(sel.glayout, popup, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
 			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);

@@ -22,6 +22,8 @@ FSlider *dialog_new_slider(Window *parent, const DSelect *sel);
 
 FProgress *dialog_new_progress(Window *parent, const DSelect *sel);
 
+FPopUp *dialog_new_popup(Window *parent, const DSelect *sel);
+
 FLayout *dialog_new_layout(Window *parent, const DSelect *sel);
 
 uint8_t dialog_unsaved_changes(Window *parent);
