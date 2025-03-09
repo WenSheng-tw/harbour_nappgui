@@ -44,6 +44,8 @@ void dform_synchro_slider(DForm *form, const DSelect *sel);
 
 void dform_synchro_progress(DForm *form, const DSelect *sel);
 
+void dform_synchro_popup(DForm *form, const DSelect *sel);
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel);
 
 void dform_synchro_column_margin(DForm *form, const DSelect *sel, const FColumn *fcol, const uint32_t col);

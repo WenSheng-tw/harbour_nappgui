@@ -12,6 +12,7 @@
 #include <gui/imageview.h>
 #include <gui/slider.h>
 #include <gui/progress.h>
+#include <gui/popup.h>
 #include <draw2d/image.h>
 #include <geom2d/s2d.h>
 #include <core/arrst.h>
@@ -20,6 +21,7 @@
 #include <core/stream.h>
 #include <core/strings.h>
 #include <sewer/cassert.h>
+#include <sewer/ptr.h>
 
 /*---------------------------------------------------------------------------*/
 
@@ -209,6 +211,23 @@ static FProgress *i_read_progress(Stream *stm)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_read_elem(Stream *stm, FElem *elem)
+{
+    elem->text = str_read(stm);
+    elem->iconpath = str_read(stm);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static FPopUp *i_read_popup(Stream *stm)
+{
+    FPopUp *popup = heap_new0(FPopUp);
+    popup->elems = arrst_read(stm, i_read_elem, FElem);
+    return popup;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
@@ -243,6 +262,9 @@ static void i_read_cell(Stream *stm, FCell *cell)
         break;
     case ekCELL_TYPE_PROGRESS:
         cell->widget.progress = i_read_progress(stm);
+        break;
+    case ekCELL_TYPE_POPUP:
+        cell->widget.popup = i_read_popup(stm);
         break;
 	case ekCELL_TYPE_LAYOUT:
         cell->widget.layout = flayout_read(stm);
@@ -386,6 +408,22 @@ static void i_write_progress(Stream *stm, const FProgress *progress)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_write_elem(Stream *stm, const FElem *elem)
+{
+    str_write(stm, elem->text);
+    str_write(stm, elem->iconpath);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_write_popup(Stream *stm, const FPopUp *popup)
+{
+    cassert_no_null(popup);
+    arrst_write(stm, popup->elems, i_write_elem, FElem);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_write_cell(Stream *stm, const FCell *cell)
 {
     cassert_no_null(cell);
@@ -420,6 +458,9 @@ static void i_write_cell(Stream *stm, const FCell *cell)
         break;
     case ekCELL_TYPE_PROGRESS:
 		i_write_progress(stm, cell->widget.progress);
+        break;
+    case ekCELL_TYPE_POPUP:
+		i_write_popup(stm, cell->widget.popup);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_write(stm, cell->widget.layout);
@@ -744,6 +785,20 @@ void flayout_add_progress(FLayout *layout, FProgress *progress, const uint32_t c
 
 /*---------------------------------------------------------------------------*/
 
+void flayout_add_popup(FLayout *layout, FPopUp *popup, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(popup);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_POPUP;
+    cell->halign = ekHALIGN_JUSTIFY;
+    cell->valign = ekHALIGN_CENTER;
+    cell->widget.popup = popup;
+}
+
+/*---------------------------------------------------------------------------*/
+
 uint32_t flayout_ncols(const FLayout *layout)
 {
     cassert_no_null(layout);
@@ -1000,6 +1055,27 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     break;
                 }
 
+                case ekCELL_TYPE_POPUP:
+                {
+                    FPopUp *fpopup = cells->widget.popup;
+                    PopUp *gpopup = popup_create();
+                    
+                    arrst_foreach_const(elem, fpopup->elems, FElem)
+                        Image *image = NULL;
+                        if (str_empty(elem->iconpath) == FALSE)
+                        {
+                            String *path = str_cpath("%s/%s", resource_path, tc(elem->iconpath));
+                            image = image_from_file(tc(path), NULL);
+                            str_destroy(&path);
+                        }
+                        popup_add_elem(gpopup, tc(elem->text), image);
+                        ptr_destopt(image_destroy, &image, Image);
+                    arrst_end()
+
+                    layout_popup(glayout, gpopup, i, j);
+                    break;
+                }
+
                 case ekCELL_TYPE_LAYOUT:
                 {
                     Layout *gsublayout = flayout_to_gui(cells->widget.layout, resource_path, empty_width, empty_height);
@@ -1043,6 +1119,7 @@ GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout
                 case ekCELL_TYPE_IMAGE:
                 case ekCELL_TYPE_SLIDER:
                 case ekCELL_TYPE_PROGRESS:
+                case ekCELL_TYPE_POPUP:
 				{
                     Cell *gcell = layout_cell(gui_layout, i, j);
                     return cell_control(gcell);

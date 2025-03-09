@@ -35,6 +35,7 @@ static void i_dbind(void)
     dbind_enum(celltype_t, ekCELL_TYPE_IMAGE, "");
     dbind_enum(celltype_t, ekCELL_TYPE_SLIDER, "");
     dbind_enum(celltype_t, ekCELL_TYPE_PROGRESS, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_POPUP, "");
     dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");
     dbind_enum(halign_t, ekHALIGN_LEFT, "Left");
     dbind_enum(halign_t, ekHALIGN_CENTER, "Center");
@@ -68,6 +69,9 @@ static void i_dbind(void)
     dbind(FImage, real32_t, min_height);
     dbind(FSlider, real32_t, min_width);
     dbind(FProgress, real32_t, min_width);
+    dbind(FElem, String *, text);
+    dbind(FElem, String *, iconpath);
+    dbind(FPopUp, ArrSt(FElem) *, elems);
     dbind(FColumn, real32_t, margin_right);
     dbind(FColumn, real32_t, forced_width);
     dbind(FRow, real32_t, margin_bottom);
@@ -180,6 +184,7 @@ static void i_dbind(void)
     dbind(FWidget, FImage *, image);
     dbind(FWidget, FSlider *, slider);
     dbind(FWidget, FProgress *, progress);
+    dbind(FWidget, FPopUp *, popup);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
 }

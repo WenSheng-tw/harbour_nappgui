@@ -1060,6 +1060,11 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
             layout_dbind_obj(data->progress_layout, cell->widget.progress, FProgress);
             panel_visible_layout(data->cell_panel, 9);
         }
+        else if (cell->type == ekCELL_TYPE_POPUP)
+        {
+            /* TODO: Popup property editor */
+            cassert(FALSE);
+        }
         else
         {
             cassert(FALSE);

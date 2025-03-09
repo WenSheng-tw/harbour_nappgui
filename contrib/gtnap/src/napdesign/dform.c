@@ -11,6 +11,7 @@
 #include <gui/guicontrol.h>
 #include <gui/button.h>
 #include <gui/edit.h>
+#include <gui/popup.h>
 #include <gui/label.h>
 #include <gui/imageview.h>
 #include <gui/textview.h>
@@ -921,6 +922,23 @@ void dform_synchro_progress(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_popup(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    PopUp *popup = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_POPUP);
+    i_need_save(form);
+    popup = layout_get_popup(sel->glayout, sel->col, sel->row);
+    popup_clear(popup);
+    /* TODO */
+    cassert(FALSE);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel)
 {
     cassert_no_null(form);
@@ -1092,6 +1110,8 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "SliderCell";
             case ekCELL_TYPE_PROGRESS:
                 return "ProgressCell";
+            case ekCELL_TYPE_POPUP:
+                return "PopUpCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();

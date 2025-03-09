@@ -798,6 +798,10 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
+            /* TODO: Draw PopUp in Canvas */
+            case ekCELL_TYPE_POPUP:
+                break;
+
             case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
