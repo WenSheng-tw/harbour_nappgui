@@ -107,8 +107,23 @@ DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_pat
                     }
                     dlayout_add_image(layout, image, i, j);
                     ptr_destopt(image_destroy, &image, Image);
-                arrst_end()                
+                arrst_end()
             }
+            else if (fcell->type == ekCELL_TYPE_LISTBOX)
+            {
+                arrst_foreach_const(elem, fcell->widget.listbox->elems, FElem)
+                    Image *image = NULL;
+                    if (str_empty(elem->iconpath) == FALSE)
+                    {
+                        String *path = str_printf("%s%s", resource_path, tc(elem->iconpath));
+                        image = image_from_file(tc(path), NULL);
+                        str_destroy(&path);
+                    }
+                    dlayout_add_image(layout, image, i, j);
+                    ptr_destopt(image_destroy, &image, Image);
+                arrst_end()
+            }
+
             else if (fcell->type == ekCELL_TYPE_LAYOUT)
             {
                 dcell->sublayout = dlayout_from_flayout(fcell->widget.layout, resource_path);
@@ -943,10 +958,14 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                     draw_fill_color(ctx, color);
                     draw_polygon(ctx, ekFILL, points, 3);
                 }
-                
+
                 draw_line_color(ctx, i_MAIN_COLOR);
                 break;
             }
+
+            /* TODO ListBox drawing */
+            case ekCELL_TYPE_LISTBOX:
+                break;
 
             case ekCELL_TYPE_LAYOUT:
             {

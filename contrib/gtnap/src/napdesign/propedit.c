@@ -367,8 +367,8 @@ static void i_OnLabelNotify(PropData *data, Event *e)
         dform_compose(data->form);
         designer_canvas_update(data->app);
     }
-    else if (evbind_modify(e, FLabel, bool_t, multiline) == TRUE 
-        || evbind_modify(e, FLabel, real32_t, min_width) == TRUE 
+    else if (evbind_modify(e, FLabel, bool_t, multiline) == TRUE
+        || evbind_modify(e, FLabel, real32_t, min_width) == TRUE
         || evbind_modify(e, FLabel, halign_t, align) == TRUE)
     {
         dform_synchro_label(data->form, &data->sel);
@@ -519,8 +519,8 @@ static void i_OnEditNotify(PropData *data, Event *e)
 {
     cassert_no_null(data);
     cassert(event_type(e) == ekGUI_EVENT_OBJCHANGE);
-    if (evbind_modify(e, FEdit, bool_t, passmode) == TRUE 
-        || evbind_modify(e, FEdit, bool_t, autosel) == TRUE 
+    if (evbind_modify(e, FEdit, bool_t, passmode) == TRUE
+        || evbind_modify(e, FEdit, bool_t, autosel) == TRUE
         || evbind_modify(e, FEdit, halign_t, text_align) == TRUE
         || evbind_modify(e, FEdit, real32_t, min_width) == TRUE)
     {
@@ -664,7 +664,7 @@ static void i_OnLoadImage(PropData *data, Event *e)
         Image *image = image_from_file(imgpath, NULL);
         if (image != NULL)
         {
-            String *relpath = str_relpath(ekLINUX, folder_path, imgpath); 
+            String *relpath = str_relpath(ekLINUX, folder_path, imgpath);
             dform_synchro_cell_image(data->form, &data->sel, image, tc(relpath));
             dlayout_set_image(data->sel.dlayout, image, data->sel.col, data->sel.row);
             button_tooltip(data->load_button, tc(relpath));
@@ -1200,7 +1200,7 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         {
             layout_dbind_obj(data->slider_layout, cell->widget.slider, FSlider);
             panel_visible_layout(data->cell_panel, 8);
-        }  
+        }
         else if (cell->type == ekCELL_TYPE_PROGRESS)
         {
             layout_dbind_obj(data->progress_layout, cell->widget.progress, FProgress);
@@ -1213,6 +1213,11 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
             panel_visible_layout(data->cell_panel, 10);
             i_update_elem_list(cell->widget.popup->elems, data->popup_list, folder_path);
         }
+        else if (cell->type == ekCELL_TYPE_LISTBOX)
+        {
+            /* TODO: Listbox to property editor */
+            cassert(FALSE);
+        }        
         else
         {
             cassert(FALSE);

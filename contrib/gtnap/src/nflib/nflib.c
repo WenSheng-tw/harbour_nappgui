@@ -36,6 +36,7 @@ static void i_dbind(void)
     dbind_enum(celltype_t, ekCELL_TYPE_SLIDER, "");
     dbind_enum(celltype_t, ekCELL_TYPE_PROGRESS, "");
     dbind_enum(celltype_t, ekCELL_TYPE_POPUP, "");
+    dbind_enum(celltype_t, ekCELL_TYPE_LISTBOX, "");
     dbind_enum(celltype_t, ekCELL_TYPE_LAYOUT, "");
     dbind_enum(halign_t, ekHALIGN_LEFT, "Left");
     dbind_enum(halign_t, ekHALIGN_CENTER, "Center");
@@ -72,6 +73,9 @@ static void i_dbind(void)
     dbind(FElem, String *, text);
     dbind(FElem, String *, iconpath);
     dbind(FPopUp, ArrSt(FElem) *, elems);
+    dbind(FListBox, real32_t, min_width);
+    dbind(FListBox, real32_t, min_height);
+    dbind(FListBox, ArrSt(FElem) *, elems);
     dbind(FColumn, real32_t, margin_right);
     dbind(FColumn, real32_t, forced_width);
     dbind(FRow, real32_t, margin_bottom);
@@ -154,6 +158,15 @@ static void i_dbind(void)
     dbind_precision(FProgress, real32_t, min_width, 1);
     dbind_range(FProgress, real32_t, min_width, 10, 1000);
 
+    dbind_default(FListBox, real32_t, min_width, 100);
+    dbind_increment(FListBox, real32_t, min_width, 1);
+    dbind_precision(FListBox, real32_t, min_width, 1);
+    dbind_range(FListBox, real32_t, min_width, 10, 1000);
+    dbind_default(FListBox, real32_t, min_height, 100);
+    dbind_increment(FListBox, real32_t, min_height, 1);
+    dbind_precision(FListBox, real32_t, min_height, 1);
+    dbind_range(FListBox, real32_t, min_height, 10, 1000);
+
     dbind_default(FCell, celltype_t, type, ekCELL_TYPE_EMPTY);
     dbind_default(FCell, halign_t, halign, ekHALIGN_LEFT);
     dbind_default(FCell, valign_t, valign, ekVALIGN_TOP);
@@ -185,6 +198,7 @@ static void i_dbind(void)
     dbind(FWidget, FSlider *, slider);
     dbind(FWidget, FProgress *, progress);
     dbind(FWidget, FPopUp *, popup);
+    dbind(FWidget, FListBox *, listbox);
     dbind(FWidget, FLayout *, layout);
     dbind(FCell, FWidget, widget);
 
@@ -197,8 +211,8 @@ static void i_dbind(void)
     dbind_default(FWidget, FSlider *, slider, NULL);
     dbind_default(FWidget, FProgress *, progress, NULL);
     dbind_default(FWidget, FPopUp *, popup, NULL);
+    dbind_default(FWidget, FListBox *, listbox, NULL);
     dbind_default(FWidget, FLayout *, layout, NULL);
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -240,3 +254,4 @@ const Image *nflib_default_image(void)
         i_RESPACK = nflib_res_respack("");
     return image_from_resource(i_RESPACK, NOIMAGE_PNG);
 }
+

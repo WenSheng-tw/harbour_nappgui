@@ -54,6 +54,8 @@ _nflib_api void flayout_add_progress(FLayout *layout, FProgress *progress, const
 
 _nflib_api void flayout_add_popup(FLayout *layout, FPopUp *popup, const uint32_t col, const uint32_t row);
 
+_nflib_api void flayout_add_listbox(FLayout *layout, FListBox *listbox, const uint32_t col, const uint32_t row);
+
 _nflib_api uint32_t flayout_ncols(const FLayout *layout);
 
 _nflib_api uint32_t flayout_nrows(const FLayout *layout);

@@ -7,6 +7,7 @@
 #include <gui/label.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
+#include <gui/listbox.h>
 #include <gui/edit.h>
 #include <gui/textview.h>
 #include <gui/imageview.h>
@@ -60,123 +61,59 @@ static void i_remove_cell(FCell *cell)
 
     case ekCELL_TYPE_BUTTON:
         dbind_destroy(&cell->widget.button, FButton);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_CHECK:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
         dbind_destroy(&cell->widget.check, FCheck);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_EDIT:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
         dbind_destroy(&cell->widget.edit, FEdit);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_LAYOUT:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
         flayout_destroy(&cell->widget.layout);
         break;
 
     case ekCELL_TYPE_TEXT:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
         dbind_destroy(&cell->widget.text, FText);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_IMAGE:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
         dbind_destroy(&cell->widget.image, FImage);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_SLIDER:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
         dbind_destroy(&cell->widget.slider, FSlider);
-        cassert(cell->widget.progress == NULL);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_PROGRESS:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
         dbind_destroy(&cell->widget.progress, FProgress);
-        cassert(cell->widget.popup == NULL);
-        cassert(cell->widget.layout == NULL);
         break;
 
     case ekCELL_TYPE_POPUP:
-        cassert(cell->widget.label == NULL);
-        cassert(cell->widget.button == NULL);
-        cassert(cell->widget.check == NULL);
-        cassert(cell->widget.edit == NULL);
-        cassert(cell->widget.text == NULL);
-        cassert(cell->widget.image == NULL);
-        cassert(cell->widget.slider == NULL);
-        cassert(cell->widget.progress == NULL);
         dbind_destroy(&cell->widget.popup, FPopUp);
-        cassert(cell->widget.layout == NULL);
         break;
-    
+
+    case ekCELL_TYPE_LISTBOX:
+        dbind_destroy(&cell->widget.listbox, FListBox);
+        break;
+
     cassert_default();
 
     }
+
+    cassert(cell->widget.label == NULL);
+    cassert(cell->widget.button == NULL);
+    cassert(cell->widget.check == NULL);
+    cassert(cell->widget.edit == NULL);
+    cassert(cell->widget.text == NULL);
+    cassert(cell->widget.image == NULL);
+    cassert(cell->widget.slider == NULL);
+    cassert(cell->widget.progress == NULL);
+    cassert(cell->widget.popup == NULL);
+    cassert(cell->widget.listbox == NULL);
+    cassert(cell->widget.layout == NULL);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -362,6 +299,17 @@ static FPopUp *i_read_popup(Stream *stm)
 
 /*---------------------------------------------------------------------------*/
 
+static FListBox *i_read_listbox(Stream *stm)
+{
+    FListBox *listbox = heap_new0(FListBox);
+    listbox->min_width = stm_read_r32(stm);
+    listbox->min_height = stm_read_r32(stm);
+    listbox->elems = arrst_read(stm, i_read_elem, FElem);
+    return listbox;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_read_cell(Stream *stm, FCell *cell)
 {
     cassert_no_null(cell);
@@ -400,8 +348,11 @@ static void i_read_cell(Stream *stm, FCell *cell)
         break;
     case ekCELL_TYPE_POPUP:
         cell->widget.popup = i_read_popup(stm);
+        break;        
+    case ekCELL_TYPE_LISTBOX:
+        cell->widget.listbox = i_read_listbox(stm);
         break;
-	case ekCELL_TYPE_LAYOUT:
+    case ekCELL_TYPE_LAYOUT:
         cell->widget.layout = flayout_read(stm);
         break;
         cassert_default();
@@ -559,6 +510,16 @@ static void i_write_popup(Stream *stm, const FPopUp *popup)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_write_listbox(Stream *stm, const FListBox *listbox)
+{
+    cassert_no_null(listbox);
+    stm_write_r32(stm, listbox->min_width);
+    stm_write_r32(stm, listbox->min_height);
+    arrst_write(stm, listbox->elems, i_write_elem, FElem);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_write_cell(Stream *stm, const FCell *cell)
 {
     cassert_no_null(cell);
@@ -596,6 +557,9 @@ static void i_write_cell(Stream *stm, const FCell *cell)
         break;
     case ekCELL_TYPE_POPUP:
 		i_write_popup(stm, cell->widget.popup);
+        break;
+    case ekCELL_TYPE_LISTBOX:
+		i_write_listbox(stm, cell->widget.listbox);
         break;
     case ekCELL_TYPE_LAYOUT:
         flayout_write(stm, cell->widget.layout);
@@ -887,7 +851,7 @@ void flayout_add_image(FLayout *layout, FImage *image, const uint32_t col, const
     cassert(cell->type == ekCELL_TYPE_EMPTY);
     cell->type = ekCELL_TYPE_IMAGE;
     cell->halign = ekHALIGN_CENTER;
-    cell->valign = ekHALIGN_CENTER;
+    cell->valign = ekVALIGN_CENTER;
     cell->widget.image = image;
 }
 
@@ -901,7 +865,7 @@ void flayout_add_slider(FLayout *layout, FSlider *slider, const uint32_t col, co
     cassert(cell->type == ekCELL_TYPE_EMPTY);
     cell->type = ekCELL_TYPE_SLIDER;
     cell->halign = ekHALIGN_JUSTIFY;
-    cell->valign = ekHALIGN_CENTER;
+    cell->valign = ekVALIGN_CENTER;
     cell->widget.slider = slider;
 }
 
@@ -915,7 +879,7 @@ void flayout_add_progress(FLayout *layout, FProgress *progress, const uint32_t c
     cassert(cell->type == ekCELL_TYPE_EMPTY);
     cell->type = ekCELL_TYPE_PROGRESS;
     cell->halign = ekHALIGN_JUSTIFY;
-    cell->valign = ekHALIGN_CENTER;
+    cell->valign = ekVALIGN_CENTER;
     cell->widget.progress = progress;
 }
 
@@ -929,8 +893,21 @@ void flayout_add_popup(FLayout *layout, FPopUp *popup, const uint32_t col, const
     cassert(cell->type == ekCELL_TYPE_EMPTY);
     cell->type = ekCELL_TYPE_POPUP;
     cell->halign = ekHALIGN_JUSTIFY;
-    cell->valign = ekHALIGN_CENTER;
+    cell->valign = ekVALIGN_CENTER;
     cell->widget.popup = popup;
+}
+/*---------------------------------------------------------------------------*/
+
+void flayout_add_listbox(FLayout *layout, FListBox *listbox, const uint32_t col, const uint32_t row)
+{
+    FCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    cassert_no_null(listbox);
+    cassert(cell->type == ekCELL_TYPE_EMPTY);
+    cell->type = ekCELL_TYPE_LISTBOX;
+    cell->halign = ekHALIGN_JUSTIFY;
+    cell->valign = ekVALIGN_JUSTIFY;
+    cell->widget.listbox = listbox;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1195,7 +1172,7 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                 {
                     FPopUp *fpopup = cells->widget.popup;
                     PopUp *gpopup = popup_create();
-                    
+
                     arrst_foreach_const(elem, fpopup->elems, FElem)
                         Image *image = NULL;
                         if (str_empty(elem->iconpath) == FALSE)
@@ -1211,6 +1188,27 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                     layout_popup(glayout, gpopup, i, j);
                     break;
                 }
+
+                case ekCELL_TYPE_LISTBOX:
+                {
+                    FListBox *flistbox = cells->widget.listbox;
+                    ListBox *glistbox = listbox_create();
+                    arrst_foreach_const(elem, flistbox->elems, FElem)
+                        Image *image = NULL;
+                        if (str_empty(elem->iconpath) == FALSE)
+                        {
+                            String *path = str_cpath("%s/%s", resource_path, tc(elem->iconpath));
+                            image = image_from_file(tc(path), NULL);
+                            str_destroy(&path);
+                        }
+                        listbox_add_elem(glistbox, tc(elem->text), image);
+                        ptr_destopt(image_destroy, &image, Image);
+                    arrst_end()
+
+                    layout_listbox(glayout, glistbox, i, j);
+                    break;
+                }
+
 
                 case ekCELL_TYPE_LAYOUT:
                 {
@@ -1256,6 +1254,7 @@ GuiControl *flayout_search_gui_control(const FLayout *layout, Layout *gui_layout
                 case ekCELL_TYPE_SLIDER:
                 case ekCELL_TYPE_PROGRESS:
                 case ekCELL_TYPE_POPUP:
+                case ekCELL_TYPE_LISTBOX:
 				{
                     Cell *gcell = layout_cell(gui_layout, i, j);
                     return cell_control(gcell);

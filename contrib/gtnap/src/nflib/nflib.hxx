@@ -16,6 +16,7 @@ typedef struct _fslider_t FSlider;
 typedef struct _fprogress_t FProgress;
 typedef struct _felem_t FElem;
 typedef struct _fpopup_t FPopUp;
+typedef struct _flistbox_t FListBox;
 typedef struct _fcolumn_t FColumn;
 typedef struct _frow_t FRow;
 /* Must be a union (when dbind supports) */
@@ -36,7 +37,8 @@ typedef enum _celltype_t
     ekCELL_TYPE_IMAGE,
     ekCELL_TYPE_SLIDER,
     ekCELL_TYPE_PROGRESS,
-    ekCELL_TYPE_POPUP
+    ekCELL_TYPE_POPUP,
+    ekCELL_TYPE_LISTBOX
 } celltype_t;
 
 /* Don't change the order. Add new values to end */
@@ -129,6 +131,13 @@ struct _fpopup_t
     ArrSt(FElem) *elems;
 };
 
+struct _flistbox_t
+{
+    real32_t min_width;
+    real32_t min_height;
+    ArrSt(FElem) *elems;
+};
+
 struct _fcolumn_t
 {
     real32_t margin_right;
@@ -152,6 +161,7 @@ struct _fwidget_t
     FSlider *slider;
     FProgress *progress;
     FPopUp *popup;
+    FListBox *listbox;
     FLayout *layout;
 };
 
