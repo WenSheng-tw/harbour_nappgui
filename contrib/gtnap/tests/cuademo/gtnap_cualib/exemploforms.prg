@@ -18,6 +18,8 @@ ADDOPCAO V_JANELA TEXTO "Formulário com #TextView" ;
     ACAO TST_FORM_TEXT() AJUDA "P?????"
 ADDOPCAO V_JANELA TEXTO "Formulário de #login" ;
     ACAO TST_FORM_LOGIN() AJUDA "P?????"
+ADDOPCAO V_JANELA TEXTO "PopUp e ListBox" ;
+    ACAO TST_POPUP_LIST() AJUDA "P?????"
 ADDOPCAO V_JANELA TEXTO "#Menus dinâmicos" ;
     ACAO TST_FORM_DYNMENU() AJUDA "P?????"
 *
@@ -222,6 +224,55 @@ IF N_RES == NAP_MODAL_ENTER .OR. N_RES == 1000
     C_MESSAGE := "C_USER: " + C_USER + ";" + ;
                  "C_PASS: " + C_PASS + ";" + ;
                  "N_SLIDER: " + hb_ntos(N_SLIDER)
+
+    MOSTRAR("M?????",C_Message)
+
+ENDIF
+
+NAP_FORM_DESTROY(V_FORM)
+
+
+**************************
+STAT PROC TST_POPUP_LIST()
+**************************
+LOCAL V_FORM := NAP_FORM_LOAD(DIRET_FORMS() + "PopUp_And_List.nfm")
+LOCAL N_POPUP_SEL := 1
+LOCAL N_LISTBOX_SEL := 2
+
+// Mapping between Harbour variables and form control names
+LOCAL V_BIND := { ;
+                    {"popup_cell", @N_POPUP_SEL }, ;
+                    {"listbox_cell", @N_LISTBOX_SEL } ;
+                }
+
+LOCAL N_RES := 0
+LOCAL C_MESSAGE := ""
+
+// Window title
+NAP_FORM_TITLE(V_FORM, "Exemplo de PopUp e ListBox")
+// Write the variable values into the form controls (Edit, Buttons, etc)
+NAP_FORM_DBIND(V_FORM, V_BIND)
+
+// Launch the form
+N_RES := NAP_FORM_MODAL(V_FORM, DIRET_FORMS())
+
+IF N_RES == NAP_MODAL_ENTER
+    MOSTRAR("M?????","Pressionado [Enter], dados aceitos.")
+ELSEIF N_RES == NAP_MODAL_ESC
+    MOSTRAR("M?????","ESC pressionado, dados cancelados.")
+ELSEIF N_RES == NAP_MODAL_X_BUTTON
+    MOSTRAR("M?????","Formulário fechado com [X], dados cancelados.")
+ELSE
+    MOSTRAR("M?????","Valor de retorno desconhecido.")
+ENDIF
+
+IF N_RES == NAP_MODAL_ENTER
+
+    // Write the values from the GUI controls to Harbour variables
+    NAP_FORM_DBIND_STORE(V_FORM)
+
+    C_MESSAGE := "N_POPUP_SEL: " + hb_ntos(N_POPUP_SEL) + ";" + ;
+                 "N_LISTBOX_SEL: " + hb_ntos(N_LISTBOX_SEL)
 
     MOSTRAR("M?????",C_Message)
 

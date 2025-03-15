@@ -6,7 +6,9 @@
 #include <gui/edit.h>
 #include <gui/guicontrol.h>
 #include <gui/label.h>
+#include <gui/listbox.h>
 #include <gui/panel.h>
+#include <gui/popup.h>
 #include <gui/slider.h>
 #include <gui/progress.h>
 #include <gui/textview.h>
@@ -164,6 +166,8 @@ void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t v
     {
         Label *label = guicontrol_label(control);
         Edit *edit = guicontrol_edit(control);
+        PopUp *popup = guicontrol_popup(control);
+        ListBox *listbox = guicontrol_listbox(control);
 
         if (label != NULL)
         {
@@ -176,6 +180,32 @@ void nform_set_control_int(NForm *form, const char_t *cell_name, const int32_t v
             char_t text[32];
             bstd_sprintf(text, sizeof(text), "%d", value);
             edit_text(edit, text);
+        }
+        else if (popup != NULL)
+        {
+            uint32_t n = popup_count(popup);
+            if (n > 0)
+            {
+                uint32_t v = 0;
+                if (value > 0)
+                    v = value - 1;
+                if (v >= n)
+                    v = n - 1;
+                popup_selected(popup, v);
+            }
+        }
+        else if (listbox != NULL)
+        {
+            uint32_t n = listbox_count(listbox);
+            if (n > 0)
+            {
+                uint32_t v = 0;
+                if (value > 0)
+                    v = value - 1;
+                if (v >= n)
+                    v = n - 1;
+                listbox_select(listbox, v, TRUE);
+            }
         }
     }
 }
@@ -268,6 +298,8 @@ bool_t nform_get_control_int(const NForm *form, const char_t *cell_name, int32_t
     if (control != NULL)
     {
         Edit *edit = guicontrol_edit(control);
+        PopUp *popup = guicontrol_popup(control);
+        ListBox *listbox = guicontrol_listbox(control);
         if (edit != NULL)
         {
             const char_t *text = edit_get_text(edit);
@@ -278,6 +310,24 @@ bool_t nform_get_control_int(const NForm *form, const char_t *cell_name, int32_t
                 *value = v;
                 return TRUE;
             }
+        }
+        else if (popup != NULL)
+        {
+            if (popup_count(popup) > 0)
+                *value = popup_get_selected(popup) + 1;
+            else
+                *value = 0;
+
+            return TRUE;
+        }
+        else if (listbox != NULL)
+        {
+            if (listbox_count(listbox) > 0)
+                *value = listbox_get_selected(listbox) + 1;
+            else
+                *value = 0;
+
+            return TRUE;
         }
     }
 
