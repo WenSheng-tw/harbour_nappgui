@@ -1193,6 +1193,8 @@ Layout *flayout_to_gui(const FLayout *layout, const char_t *resource_path, const
                 {
                     FListBox *flistbox = cells->widget.listbox;
                     ListBox *glistbox = listbox_create();
+                    listbox_size(glistbox, s2df(flistbox->min_width, flistbox->min_height));
+
                     arrst_foreach_const(elem, flistbox->elems, FElem)
                         Image *image = NULL;
                         if (str_empty(elem->iconpath) == FALSE)

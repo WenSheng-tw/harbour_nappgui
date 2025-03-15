@@ -988,19 +988,41 @@ static void i_OnListBoxClear(PropData *data, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_OnListBoxNotify(PropData *data, Event *e)
+{
+    cassert_no_null(data);
+    cassert(event_type(e) == ekGUI_EVENT_OBJCHANGE);
+    if (evbind_modify(e, FListBox, real32_t, min_width) == TRUE
+        || evbind_modify(e, FListBox, real32_t, min_height) == TRUE)
+    {
+        dform_synchro_listbox(data->form, &data->sel);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static Layout *i_listbox_layout(PropData *data)
 {
-    Layout *layout1 = layout_create(1, 5);
-    Layout *layout2 = layout_create(3, 1);
+    Layout *layout1 = layout_create(1, 6);
+    Layout *layout2 = layout_create(2, 2);
+    Layout *layout3 = i_value_updown_layout();
+    Layout *layout4 = i_value_updown_layout();
+    Layout *layout5 = layout_create(3, 1);
     Label *label1 = label_create();
     Label *label2 = label_create();
+    Label *label3 = label_create();
+    Label *label4 = label_create();
     ListBox *list = listbox_create();
     Button *button1 = button_flat();
     Button *button2 = button_flat();
     Button *button3 = button_flat();
     cassert_no_null(data);
     label_text(label1, "ListBox properties");
-    label_text(label2, "Elements");
+    label_text(label2, "MWidth");
+    label_text(label3, "MHeight");
+    label_text(label4, "Elements");
     button_image(button1, cast_const(PLUS16_PNG, Image));
     button_image(button2, cast_const(ERROR16_PNG, Image));
     button_image(button3, cast_const(RETRY16_PNG, Image));
@@ -1011,16 +1033,23 @@ static Layout *i_listbox_layout(PropData *data)
     button_OnClick(button2, listener(data, i_OnListBoxRemove, PropData));
     button_OnClick(button3, listener(data, i_OnListBoxClear, PropData));
     layout_label(layout1, label1, 0, 0);
-    layout_label(layout1, label2, 0, 1);
-    layout_listbox(layout1, list, 0, 2);
-    layout_button(layout2, button1, 0, 0);
-    layout_button(layout2, button2, 1, 0);
-    layout_button(layout2, button3, 2, 0);
-    layout_layout(layout1, layout2, 0, 3);
-    layout_halign(layout1, 0, 3, ekLEFT);
+    layout_label(layout2, label2, 0, 0);
+    layout_label(layout2, label3, 0, 1);
+    layout_label(layout1, label4, 0, 2);
+    layout_listbox(layout1, list, 0, 3);
+    layout_layout(layout2, layout3, 1, 0);
+    layout_layout(layout2, layout4, 1, 1);
+    layout_button(layout5, button1, 0, 0);
+    layout_button(layout5, button2, 1, 0);
+    layout_button(layout5, button3, 2, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_layout(layout1, layout5, 0, 4);
+    layout_halign(layout1, 0, 4, ekLEFT);
     layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
-    layout_vexpand(layout1, 4);
-    layout_dbind(layout1, NULL, FListBox);
+    layout_vexpand(layout1, 5);
+    cell_dbind(layout_cell(layout2, 1, 0), FListBox, real32_t, min_width);
+    cell_dbind(layout_cell(layout2, 1, 1), FListBox, real32_t, min_height);
+    layout_dbind(layout1, listener(data, i_OnListBoxNotify, PropData), FListBox);
     data->listbox_layout = layout1;
     data->listbox_list = list;
     return layout1;

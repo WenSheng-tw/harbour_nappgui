@@ -1008,6 +1008,21 @@ void dform_synchro_popup_clear(DForm *form, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+void dform_synchro_listbox(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    listbox_size(listbox, s2df(cell->widget.listbox->min_width, cell->widget.listbox->min_height));
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *image)
 {
     FCell *cell = i_sel_fcell(sel);
