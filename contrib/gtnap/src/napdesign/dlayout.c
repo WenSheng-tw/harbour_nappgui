@@ -85,14 +85,31 @@ DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_pat
             const FCell *fcell = flayout_ccell(flayout, i, j);
             if (fcell->type == ekCELL_TYPE_IMAGE)
             {
-                String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
-                Image *image = image_from_file(tc(path), NULL);
+                Image *image = NULL;
+                if (str_empty(fcell->widget.image->path) == FALSE)
+                {
+                    String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
+                    image = image_from_file(tc(path), NULL);
+                    str_destroy(&path);
+                }
                 dlayout_set_image(layout, image, i, j);
-                str_destroy(&path);
                 ptr_destopt(image_destroy, &image, Image);
             }
-
-            if (fcell->type == ekCELL_TYPE_LAYOUT)
+            else if (fcell->type == ekCELL_TYPE_POPUP)
+            {
+                arrst_foreach_const(elem, fcell->widget.popup->elems, FElem)
+                    Image *image = NULL;
+                    if (str_empty(elem->iconpath) == FALSE)
+                    {
+                        String *path = str_printf("%s%s", resource_path, tc(elem->iconpath));
+                        image = image_from_file(tc(path), NULL);
+                        str_destroy(&path);
+                    }
+                    dlayout_add_image(layout, image, i, j);
+                    ptr_destopt(image_destroy, &image, Image);
+                arrst_end()                
+            }
+            else if (fcell->type == ekCELL_TYPE_LAYOUT)
             {
                 dcell->sublayout = dlayout_from_flayout(fcell->widget.layout, resource_path);
             }
@@ -237,6 +254,23 @@ static void i_set_image(DLayout *layout, const Image *image, const uint32_t inde
 void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
 {
     i_set_image(layout, image, 0, col, row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_remove_images(DLayout *layout, const uint32_t col, const uint32_t row)
+{
+    DCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    if (cell->nimages != NULL)
+    {
+        arrpt_clear(cell->nimages, i_destroy_image, Image);
+        arrpt_clear(cell->simages, i_destroy_image, Image);
+    }
+    else
+    {
+        cassert(cell->simages == NULL);
+    }
 }
 
 /*---------------------------------------------------------------------------*/

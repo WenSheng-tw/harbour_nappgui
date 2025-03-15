@@ -874,6 +874,7 @@ static void i_OnPopUpClear(PropData *data, Event *e)
     arrst_clear(fpopup->elems, i_remove_elem, FElem);
     listbox_clear(data->popup_list);
     dform_synchro_popup_clear(data->form, &data->sel);
+    dlayout_remove_images(data->sel.dlayout, data->sel.col, data->sel.row);
     dform_compose(data->form);
     designer_canvas_update(data->app);
     unref(e);
@@ -1070,6 +1071,24 @@ Panel *propedit_create(Designer *app)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_update_elem_list(const ArrSt(FElem) *elems, ListBox *list, const char_t *folder_path)
+{
+    listbox_clear(list);
+    arrst_foreach_const(elem, elems, FElem)
+        Image *image = NULL;
+        if (str_empty(elem->iconpath) == FALSE)
+        {
+            String *path = str_cpath("%s/%s", folder_path, tc(elem->iconpath));
+            image = image_from_file(tc(path), NULL);
+            str_destroy(&path);
+        }
+        listbox_add_elem(list, tc(elem->text), image);
+        ptr_destopt(image_destroy, &image, Image);
+    arrst_end()
+}
+
+/*---------------------------------------------------------------------------*/
+
 void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
 {
     PropData *data = panel_get_data(panel, PropData);
@@ -1189,8 +1208,10 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         }
         else if (cell->type == ekCELL_TYPE_POPUP)
         {
+            const char_t *folder_path = designer_folder_path(data->app);
             layout_dbind_obj(data->popup_layout, cell->widget.popup, FPopUp);
             panel_visible_layout(data->cell_panel, 10);
+            i_update_elem_list(cell->widget.popup->elems, data->popup_list, folder_path);
         }
         else
         {
