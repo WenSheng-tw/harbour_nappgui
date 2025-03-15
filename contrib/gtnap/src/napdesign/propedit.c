@@ -824,6 +824,7 @@ static void i_OnPopUpAdd(PropData *data, Event *e)
         path = str_cpath("%s/%s", folder_path, tc(elem->iconpath));
         image = image_from_file(tc(path), NULL);
         listbox_add_elem(data->popup_list, tc(nelem->text), image);
+        dlayout_add_image(data->sel.dlayout, image, data->sel.col, data->sel.row);
         dform_synchro_popup_add(data->form, &data->sel, image);
         dform_compose(data->form);
         designer_canvas_update(data->app);

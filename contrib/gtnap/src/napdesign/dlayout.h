@@ -22,6 +22,8 @@ void dlayout_add_layout(DLayout *layout, DLayout *sublayout, const uint32_t col,
 
 void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row);
 
+void dlayout_add_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row);
+
 void dlayout_synchro_visual(DLayout *dlayout, const Layout *glayout, const V2Df origin);
 
 void dlayout_elem_at_pos(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const real32_t x, const real32_t y, ArrSt(DSelect) *selpath);

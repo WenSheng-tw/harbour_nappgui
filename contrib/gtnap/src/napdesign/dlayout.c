@@ -20,6 +20,7 @@
 #include <geom2d/r2d.h>
 #include <geom2d/v2d.h>
 #include <geom2d/t2d.h>
+#include <core/arrpt.h>
 #include <core/arrst.h>
 #include <core/heap.h>
 #include <core/strings.h>
@@ -43,15 +44,22 @@ void dlayout_global_init(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_destroy_image(Image **image)
+{
+    cassert_no_null(image);
+    if (*image != NULL)
+        image_destroy(image);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_remove_cell(DCell *cell)
 {
     cassert_no_null(cell);
     if (cell->sublayout != NULL)
         dlayout_destroy(&cell->sublayout);
-    if (cell->nimage != NULL)
-        image_destroy(&cell->nimage);
-    if (cell->simage != NULL)
-        image_destroy(&cell->simage);
+    arrpt_destopt(&cell->nimages, i_destroy_image, Image);
+    arrpt_destopt(&cell->simages, i_destroy_image, Image);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -174,21 +182,68 @@ void dlayout_add_layout(DLayout *layout, DLayout *sublayout, const uint32_t col,
 
 /*---------------------------------------------------------------------------*/
 
-void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+static void i_set_image(DLayout *layout, const Image *image, const uint32_t index, const uint32_t col, const uint32_t row)
 {
     DCell *cell = i_cell(layout, col, row);
+    uint32_t n = UINT32_MAX;
+    Image *nimage = NULL;
+    Image *simage = NULL;
+
     cassert_no_null(cell);
-    if (cell->nimage != NULL)
-        image_destroy(&cell->nimage);
+    if (cell->nimages == NULL)
+    {
+        cassert(cell->simages == NULL);
+        cell->nimages = arrpt_create(Image);
+        cell->simages = arrpt_create(Image);
+    }
 
-    if (cell->simage != NULL)
-        image_destroy(&cell->simage);
-
+    n = arrpt_size(cell->nimages, Image);
+    cassert(n == arrpt_size(cell->simages, Image));
     if (image != NULL)
     {
-        cell->nimage = imgproc_binarize(image, i_MAIN_COLOR, i_BGCOLOR);
-        cell->simage = imgproc_binarize(image, i_SEL_COLOR, i_BGCOLOR);
+        nimage = imgproc_binarize(image, i_MAIN_COLOR, i_BGCOLOR);
+        simage = imgproc_binarize(image, i_SEL_COLOR, i_BGCOLOR);
     }
+
+    /* Change the current image */
+    if (index < n)
+    {
+        Image **pnimage = arrpt_all(cell->nimages, Image);
+        Image **psimage = arrpt_all(cell->simages, Image);
+        if (pnimage[index] != NULL)
+        {
+            image_destroy(&pnimage[index]);
+            image_destroy(&psimage[index]);
+        }
+        else
+        {
+            cassert(psimage[index] == NULL);
+        }
+
+        pnimage[index] = nimage;
+        psimage[index] = simage;
+    }
+    /* Add image at the end */
+    else
+    {
+        cassert(index == n || index == UINT32_MAX);
+        arrpt_append(cell->nimages, nimage, Image);
+        arrpt_append(cell->simages, simage, Image);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    i_set_image(layout, image, 0, col, row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_add_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    i_set_image(layout, image, UINT32_MAX, col, row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -592,6 +647,17 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const R2Df *cell_r
 
 /*---------------------------------------------------------------------------*/
 
+static const Image *i_get_image(const DCell *cell, const uint32_t index, const bool_t sel)
+{
+    cassert_no_null(cell);
+    if (sel == TRUE)
+        return arrpt_get_const(cell->simages, index, Image);
+    else
+        return arrpt_get_const(cell->nimages, index, Image);
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, DCtx *ctx)
 {
     uint32_t ncols, nrows, i, j;
@@ -729,7 +795,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             case ekCELL_TYPE_IMAGE:
             {
                 color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
-                const Image *image = i_is_cell_sel(hover, dlayout, i, j) ? dcell->simage : dcell->nimage;
+                const Image *image = i_get_image(dcell, 0, i_is_cell_sel(hover, dlayout, i, j));
 
                 if (image != NULL)
                 {
