@@ -273,7 +273,24 @@ void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, 
 
 /*---------------------------------------------------------------------------*/
 
-void dlayout_remove_images(DLayout *layout, const uint32_t col, const uint32_t row)
+void dlayout_add_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    i_set_image(layout, image, UINT32_MAX, col, row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_del_image(DLayout *layout, const uint32_t index, const uint32_t col, const uint32_t row)
+{
+    DCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    arrpt_delete(cell->nimages, index, i_destroy_image, Image);
+    arrpt_delete(cell->simages, index, i_destroy_image, Image);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_clear_images(DLayout *layout, const uint32_t col, const uint32_t row)
 {
     DCell *cell = i_cell(layout, col, row);
     cassert_no_null(cell);
@@ -286,13 +303,6 @@ void dlayout_remove_images(DLayout *layout, const uint32_t col, const uint32_t r
     {
         cassert(cell->simages == NULL);
     }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void dlayout_add_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
-{
-    i_set_image(layout, image, UINT32_MAX, col, row);
 }
 
 /*---------------------------------------------------------------------------*/

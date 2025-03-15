@@ -50,6 +50,8 @@ void dform_synchro_popup_clear(DForm *form, const DSelect *sel);
 
 void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *image);
 
+void dform_synchro_listbox_del(DForm *form, const DSelect *sel, const uint32_t index);
+
 void dform_synchro_listbox_clear(DForm *form, const DSelect *sel);
 
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel);

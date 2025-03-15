@@ -650,6 +650,30 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 }
             }
 
+            case ekWIDGET_LISTBOX:
+            {
+                FListBox *flistbox = dialog_new_listbox(window, &sel);
+                if (flistbox != NULL)
+                {
+                    ListBox *listbox = listbox_create();
+                    cassert(arrst_size(flistbox->elems, FElem) == 0);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_listbox(sel.flayout, flistbox, sel.col, sel.row);
+                    layout_listbox(sel.glayout, listbox, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
 			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
@@ -956,10 +980,12 @@ void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_POPUP);
+    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     popup = layout_get_popup(sel->glayout, sel->col, sel->row);
     elem = arrst_last_const(cell->widget.popup->elems, FElem);
     popup_add_elem(popup, tc(elem->text), image);
+    dlayout_add_image(form->dlayout, image, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -972,9 +998,11 @@ void dform_synchro_popup_clear(DForm *form, const DSelect *sel)
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_POPUP);
+    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     popup = layout_get_popup(sel->glayout, sel->col, sel->row);
     popup_clear(popup);
+    dlayout_clear_images(form->dlayout, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -988,10 +1016,29 @@ void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *ima
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
-    elem = arrst_last_const(cell->widget.popup->elems, FElem);
+    elem = arrst_last_const(cell->widget.listbox->elems, FElem);
     listbox_add_elem(listbox, tc(elem->text), image);
+    dlayout_add_image(form->dlayout, image, sel->col, sel->row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_listbox_del(DForm *form, const DSelect *sel, const uint32_t index)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    cassert(form->dlayout == sel->dlayout);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    listbox_del_elem(listbox, index);
+    dlayout_del_image(form->dlayout, index, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1004,9 +1051,11 @@ void dform_synchro_listbox_clear(DForm *form, const DSelect *sel)
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
     listbox_clear(listbox);
+    dlayout_clear_images(form->dlayout, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/

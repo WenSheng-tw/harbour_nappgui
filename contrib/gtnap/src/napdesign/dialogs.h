@@ -24,6 +24,8 @@ FProgress *dialog_new_progress(Window *parent, const DSelect *sel);
 
 FPopUp *dialog_new_popup(Window *parent, const DSelect *sel);
 
+FListBox *dialog_new_listbox(Window *parent, const DSelect *sel);
+
 FElem *dialog_new_elem(Window *parent, const char_t *folder_path);
 
 FLayout *dialog_new_layout(Window *parent, const DSelect *sel);

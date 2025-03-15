@@ -50,7 +50,9 @@ struct _propdata_t
     Layout *slider_layout;
     Layout *progress_layout;
     Layout *popup_layout;
+    Layout *listbox_layout;
     ListBox *popup_list;
+    ListBox *listbox_list;
     Cell *column_margin_cell;
     Cell *row_margin_cell;
     Label *layout_geom_label;
@@ -64,6 +66,13 @@ struct _propdata_t
 
 static const real32_t i_GRID_HMARGIN = 5;
 static const real32_t i_HEADER_VMARGIN = 3;
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_elem(FElem *elem)
+{
+    dbind_remove(elem, FElem);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -824,7 +833,6 @@ static void i_OnPopUpAdd(PropData *data, Event *e)
         path = str_cpath("%s/%s", folder_path, tc(elem->iconpath));
         image = image_from_file(tc(path), NULL);
         listbox_add_elem(data->popup_list, tc(nelem->text), image);
-        dlayout_add_image(data->sel.dlayout, image, data->sel.col, data->sel.row);
         dform_synchro_popup_add(data->form, &data->sel, image);
         dform_compose(data->form);
         designer_canvas_update(data->app);
@@ -859,13 +867,6 @@ static void i_OnPopUpRemove(PropData *data, Event *e)
 
 /*---------------------------------------------------------------------------*/
 
-static void i_remove_elem(FElem *elem)
-{
-    dbind_remove(elem, FElem);
-}
-
-/*---------------------------------------------------------------------------*/
-
 static void i_OnPopUpClear(PropData *data, Event *e)
 {
     FPopUp *fpopup = NULL;
@@ -874,7 +875,6 @@ static void i_OnPopUpClear(PropData *data, Event *e)
     arrst_clear(fpopup->elems, i_remove_elem, FElem);
     listbox_clear(data->popup_list);
     dform_synchro_popup_clear(data->form, &data->sel);
-    dlayout_remove_images(data->sel.dlayout, data->sel.col, data->sel.row);
     dform_compose(data->form);
     designer_canvas_update(data->app);
     unref(e);
@@ -917,6 +917,112 @@ static Layout *i_popup_layout(PropData *data)
     layout_dbind(layout1, NULL, FPopUp);
     data->popup_layout = layout1;
     data->popup_list = list;
+    return layout1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnListBoxAdd(PropData *data, Event *e)
+{
+    Window *window = NULL;
+    const char_t *folder_path = NULL;
+    FElem *elem = NULL;
+    cassert_no_null(data);
+    window = designer_main_window(data->app);
+    folder_path = designer_folder_path(data->app);
+    elem = dialog_new_elem(window, folder_path);
+    if (elem != NULL)
+    {
+        FListBox *flistbox = layout_dbind_get_obj(data->listbox_layout, FListBox);
+        FElem *nelem = arrst_new(flistbox->elems, FElem);
+        String *path = NULL;
+        Image *image = NULL;
+        nelem->text = str_copy(elem->text);
+        nelem->iconpath = str_copy(elem->iconpath);
+        path = str_cpath("%s/%s", folder_path, tc(elem->iconpath));
+        image = image_from_file(tc(path), NULL);
+        listbox_add_elem(data->listbox_list, tc(nelem->text), image);
+        dform_synchro_listbox_add(data->form, &data->sel, image);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+        str_destroy(&path);
+        ptr_destopt(image_destroy, &image, Image);
+        dbind_destroy(&elem, FElem);
+    }
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnListBoxRemove(PropData *data, Event *e)
+{
+    uint32_t index = UINT32_MAX;
+    cassert_no_null(data);
+    index = listbox_get_selected(data->listbox_list);
+    if (index != UINT32_MAX)
+    {
+        FListBox *flistbox = layout_dbind_get_obj(data->listbox_layout, FListBox);
+        listbox_del_elem(data->listbox_list, index);
+        arrst_delete(flistbox->elems, index, i_remove_elem, FElem);
+        dform_synchro_listbox_del(data->form, &data->sel, index);
+        dform_compose(data->form);
+        designer_canvas_update(data->app);
+    }
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_OnListBoxClear(PropData *data, Event *e)
+{
+    FListBox *flistbox = NULL;
+    cassert_no_null(data);
+    flistbox = layout_dbind_get_obj(data->listbox_layout, FListBox);
+    arrst_clear(flistbox->elems, i_remove_elem, FElem);
+    listbox_clear(data->listbox_list);
+    dform_synchro_listbox_clear(data->form, &data->sel);
+    dform_compose(data->form);
+    designer_canvas_update(data->app);
+    unref(e);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static Layout *i_listbox_layout(PropData *data)
+{
+    Layout *layout1 = layout_create(1, 5);
+    Layout *layout2 = layout_create(3, 1);
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    ListBox *list = listbox_create();
+    Button *button1 = button_flat();
+    Button *button2 = button_flat();
+    Button *button3 = button_flat();
+    cassert_no_null(data);
+    label_text(label1, "ListBox properties");
+    label_text(label2, "Elements");
+    button_image(button1, cast_const(PLUS16_PNG, Image));
+    button_image(button2, cast_const(ERROR16_PNG, Image));
+    button_image(button3, cast_const(RETRY16_PNG, Image));
+    button_tooltip(button1, "Add a new element");
+    button_tooltip(button2, "Remove current element");
+    button_tooltip(button3, "Clear all elements");
+    button_OnClick(button1, listener(data, i_OnListBoxAdd, PropData));
+    button_OnClick(button2, listener(data, i_OnListBoxRemove, PropData));
+    button_OnClick(button3, listener(data, i_OnListBoxClear, PropData));
+    layout_label(layout1, label1, 0, 0);
+    layout_label(layout1, label2, 0, 1);
+    layout_listbox(layout1, list, 0, 2);
+    layout_button(layout2, button1, 0, 0);
+    layout_button(layout2, button2, 1, 0);
+    layout_button(layout2, button3, 2, 0);
+    layout_layout(layout1, layout2, 0, 3);
+    layout_halign(layout1, 0, 3, ekLEFT);
+    layout_vmargin(layout1, 0, i_HEADER_VMARGIN);
+    layout_vexpand(layout1, 4);
+    layout_dbind(layout1, NULL, FListBox);
+    data->listbox_layout = layout1;
+    data->listbox_list = list;
     return layout1;
 }
 
@@ -998,6 +1104,7 @@ static Panel *i_cell_content_panel(PropData *data)
     Layout *layout9 = i_slider_layout(data);
     Layout *layout10 = i_progress_layout(data);
     Layout *layout11 = i_popup_layout(data);
+    Layout *layout12 = i_listbox_layout(data);
     Panel *panel = panel_create();
     cassert_no_null(data);
     panel_layout(panel, layout1);
@@ -1011,6 +1118,7 @@ static Panel *i_cell_content_panel(PropData *data)
     panel_layout(panel, layout9);
     panel_layout(panel, layout10);
     panel_layout(panel, layout11);
+    panel_layout(panel, layout12);
     panel_visible_layout(panel, 0);
     data->cell_panel = panel;
     return panel;
@@ -1215,8 +1323,10 @@ void propedit_set(Panel *panel, DForm *form, const DSelect *sel)
         }
         else if (cell->type == ekCELL_TYPE_LISTBOX)
         {
-            /* TODO: Listbox to property editor */
-            cassert(FALSE);
+            const char_t *folder_path = designer_folder_path(data->app);
+            layout_dbind_obj(data->listbox_layout, cell->widget.listbox, FListBox);
+            panel_visible_layout(data->cell_panel, 11);
+            i_update_elem_list(cell->widget.listbox->elems, data->listbox_list, folder_path);
         }        
         else
         {

@@ -705,6 +705,42 @@ FPopUp *dialog_new_popup(Window *parent, const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
+FListBox *dialog_new_listbox(Window *parent, const DSelect *sel)
+{
+    DialogData data = i_dialog_data();
+    Layout *layout1 = layout_create(1, 2);
+    Layout *layout2 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FListBox *flistbox = dbind_create(FListBox);
+    uint32_t ret = 0;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New ListBox widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    layout_label(layout1, label1, 0, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&flistbox, FListBox);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    i_remove_dialog_data(&data);
+    return flistbox;
+}
+
+/*---------------------------------------------------------------------------*/
+
 FElem *dialog_new_elem(Window *parent, const char_t *folder_path)
 {
     DialogData data = i_dialog_data();
