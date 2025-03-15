@@ -692,7 +692,7 @@ static const Image *i_get_image(const DCell *cell, const uint32_t index, const b
 
 /*---------------------------------------------------------------------------*/
 
-void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, DCtx *ctx)
+void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, const Font *default_font, DCtx *ctx)
 {
     uint32_t ncols, nrows, i, j;
     const DCell *dcell = NULL;
@@ -898,14 +898,60 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
-            /* TODO: Draw PopUp in Canvas */
             case ekCELL_TYPE_POPUP:
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                draw_line_color(ctx, color);
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_line_width(ctx, 3);
+                draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_line_width(ctx, 1);
+
+                if (arrst_size(fcell->widget.popup->elems, FElem) > 0)
+                {
+                    const Image *image = i_get_image(dcell, 0, i_is_cell_sel(hover, dlayout, i, j));
+                    const FElem *elem = arrst_first_const(fcell->widget.popup->elems, FElem);
+                    real32_t xoffset = 4;
+                    real32_t twidth, theight;
+                    real32_t tx, ty;
+
+                    if (image != NULL)
+                    {
+                        real32_t imgwidth = (real32_t)image_width(image);
+                        real32_t imgheight = (real32_t)image_height(image);
+                        real32_t yoffset = (dcell->content_rect.size.height - imgheight) / 2;
+                        draw_image(ctx, image, dcell->content_rect.pos.x + xoffset, dcell->content_rect.pos.y + yoffset);
+                        xoffset += imgwidth + 4;
+                    }
+
+                    draw_text_color(ctx, color);
+                    font_extents(default_font, tc(elem->text), -1.f, &twidth, &theight);
+                    tx = dcell->content_rect.pos.x + xoffset;
+                    ty = dcell->content_rect.pos.y + ((dcell->content_rect.size.height - theight) / 2);
+                    drawctrl_text(ctx, tc(elem->text), (int32_t)tx, (int32_t)ty, ekCTRL_STATE_NORMAL);
+                }
+
+                /* PopUp arrow */
+                {
+                    V2Df points[3];
+                    points[0].x = dcell->content_rect.pos.x + dcell->content_rect.size.width - 5;
+                    points[0].y = dcell->content_rect.pos.y + dcell->content_rect.size.height / 2 - 4;
+                    points[1].x = points[0].x - 8;
+                    points[1].y = points[0].y;
+                    points[2].x = (points[0].x + points[1].x) / 2;
+                    points[2].y = points[0].y + 6;
+                    draw_fill_color(ctx, color);
+                    draw_polygon(ctx, ekFILL, points, 3);
+                }
+                
+                draw_line_color(ctx, i_MAIN_COLOR);
                 break;
+            }
 
             case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
-                dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, ctx);
+                dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, default_font, ctx);
                 break;
             }
             }

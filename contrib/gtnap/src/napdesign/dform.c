@@ -1072,10 +1072,10 @@ FCell *dform_sel_fcell(const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, DCtx *ctx)
+void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, const Font *default_font, DCtx *ctx)
 {
     cassert_no_null(form);
-    dlayout_draw(form->dlayout, form->flayout, form->glayout, &form->hover, &form->sel, swidget, add_icon, ctx);
+    dlayout_draw(form->dlayout, form->flayout, form->glayout, &form->hover, &form->sel, swidget, add_icon, default_font, ctx);
 }
 
 /*---------------------------------------------------------------------------*/

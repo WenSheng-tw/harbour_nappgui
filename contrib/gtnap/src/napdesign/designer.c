@@ -16,7 +16,6 @@ struct _desiger_t
     String *folder_path;
     ArrPt(DForm) *forms;
     uint32_t sel_form;
-
     ListBox *form_list;
     Label *status_label;
     Label *cells_label;
@@ -33,6 +32,7 @@ struct _desiger_t
     Cell *remove_form_cell;
     Cell *rename_form_cell;
     Image *add_icon;
+    Font *default_font;
 };
 
 DeclPt(DForm);
@@ -653,7 +653,7 @@ static void i_OnDraw(Designer *app, Event *e)
     if (app->sel_form != UINT32_MAX)
     {
         DForm *form = arrpt_get(app->forms, app->sel_form, DForm);
-        dform_draw(form, app->swidget, app->add_icon, p->ctx);
+        dform_draw(form, app->swidget, app->add_icon, app->default_font, p->ctx);
     }
 }
 
@@ -897,6 +897,7 @@ static Designer *i_app(void)
     dlayout_global_init();
     app->forms = arrpt_create(DForm);
     app->add_icon = image_copy(gui_image(PLUS16_PNG));
+    app->default_font = font_system(font_regular_size(), 0);
     return app;
 }
 
@@ -927,6 +928,7 @@ static void i_destroy(Designer **app)
     cassert_no_null(*app);
     str_destroy(&(*app)->folder_path);
     image_destroy(&(*app)->add_icon);
+    font_destroy(&(*app)->default_font);
     arrpt_destroy(&(*app)->forms, i_destroy_form_opt, DForm);
     window_destroy(&(*app)->window);
     nflib_finish();
