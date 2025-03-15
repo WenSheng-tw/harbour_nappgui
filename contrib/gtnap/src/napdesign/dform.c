@@ -657,6 +657,7 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                 {
                     ListBox *listbox = listbox_create();
                     cassert(arrst_size(flistbox->elems, FElem) == 0);
+                    listbox_size(listbox, s2df(flistbox->min_width, flistbox->min_height));
                     i_sel_remove_cell(&sel);
                     flayout_add_listbox(sel.flayout, flistbox, sel.col, sel.row);
                     layout_listbox(sel.glayout, listbox, sel.col, sel.row);
