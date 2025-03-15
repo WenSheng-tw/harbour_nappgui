@@ -8,6 +8,7 @@
 #include <gui/label.h>
 #include <gui/layout.h>
 #include <gui/layouth.h>
+#include <gui/listbox.h>
 #include <gui/edit.h>
 #include <gui/cell.h>
 #include <gui/drawctrl.inl>
@@ -20,6 +21,7 @@
 #include <geom2d/r2d.h>
 #include <geom2d/v2d.h>
 #include <geom2d/t2d.h>
+#include <core/arrpt.h>
 #include <core/arrst.h>
 #include <core/heap.h>
 #include <core/strings.h>
@@ -43,15 +45,22 @@ void dlayout_global_init(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void i_destroy_image(Image **image)
+{
+    cassert_no_null(image);
+    if (*image != NULL)
+        image_destroy(image);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void i_remove_cell(DCell *cell)
 {
     cassert_no_null(cell);
     if (cell->sublayout != NULL)
         dlayout_destroy(&cell->sublayout);
-    if (cell->nimage != NULL)
-        image_destroy(&cell->nimage);
-    if (cell->simage != NULL)
-        image_destroy(&cell->simage);
+    arrpt_destopt(&cell->nimages, i_destroy_image, Image);
+    arrpt_destopt(&cell->simages, i_destroy_image, Image);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -77,14 +86,46 @@ DLayout *dlayout_from_flayout(const FLayout *flayout, const char_t *resource_pat
             const FCell *fcell = flayout_ccell(flayout, i, j);
             if (fcell->type == ekCELL_TYPE_IMAGE)
             {
-                String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
-                Image *image = image_from_file(tc(path), NULL);
+                Image *image = NULL;
+                if (str_empty(fcell->widget.image->path) == FALSE)
+                {
+                    String *path = str_printf("%s%s", resource_path, tc(fcell->widget.image->path));
+                    image = image_from_file(tc(path), NULL);
+                    str_destroy(&path);
+                }
                 dlayout_set_image(layout, image, i, j);
-                str_destroy(&path);
                 ptr_destopt(image_destroy, &image, Image);
             }
+            else if (fcell->type == ekCELL_TYPE_POPUP)
+            {
+                arrst_foreach_const(elem, fcell->widget.popup->elems, FElem)
+                    Image *image = NULL;
+                    if (str_empty(elem->iconpath) == FALSE)
+                    {
+                        String *path = str_printf("%s%s", resource_path, tc(elem->iconpath));
+                        image = image_from_file(tc(path), NULL);
+                        str_destroy(&path);
+                    }
+                    dlayout_add_image(layout, image, i, j);
+                    ptr_destopt(image_destroy, &image, Image);
+                arrst_end()
+            }
+            else if (fcell->type == ekCELL_TYPE_LISTBOX)
+            {
+                arrst_foreach_const(elem, fcell->widget.listbox->elems, FElem)
+                    Image *image = NULL;
+                    if (str_empty(elem->iconpath) == FALSE)
+                    {
+                        String *path = str_printf("%s%s", resource_path, tc(elem->iconpath));
+                        image = image_from_file(tc(path), NULL);
+                        str_destroy(&path);
+                    }
+                    dlayout_add_image(layout, image, i, j);
+                    ptr_destopt(image_destroy, &image, Image);
+                arrst_end()
+            }
 
-            if (fcell->type == ekCELL_TYPE_LAYOUT)
+            else if (fcell->type == ekCELL_TYPE_LAYOUT)
             {
                 dcell->sublayout = dlayout_from_flayout(fcell->widget.layout, resource_path);
             }
@@ -174,20 +215,94 @@ void dlayout_add_layout(DLayout *layout, DLayout *sublayout, const uint32_t col,
 
 /*---------------------------------------------------------------------------*/
 
+static void i_set_image(DLayout *layout, const Image *image, const uint32_t index, const uint32_t col, const uint32_t row)
+{
+    DCell *cell = i_cell(layout, col, row);
+    uint32_t n = UINT32_MAX;
+    Image *nimage = NULL;
+    Image *simage = NULL;
+
+    cassert_no_null(cell);
+    if (cell->nimages == NULL)
+    {
+        cassert(cell->simages == NULL);
+        cell->nimages = arrpt_create(Image);
+        cell->simages = arrpt_create(Image);
+    }
+
+    n = arrpt_size(cell->nimages, Image);
+    cassert(n == arrpt_size(cell->simages, Image));
+    if (image != NULL)
+    {
+        nimage = imgproc_binarize(image, i_MAIN_COLOR, i_BGCOLOR);
+        simage = imgproc_binarize(image, i_SEL_COLOR, i_BGCOLOR);
+    }
+
+    /* Change the current image */
+    if (index < n)
+    {
+        Image **pnimage = arrpt_all(cell->nimages, Image);
+        Image **psimage = arrpt_all(cell->simages, Image);
+        if (pnimage[index] != NULL)
+        {
+            image_destroy(&pnimage[index]);
+            image_destroy(&psimage[index]);
+        }
+        else
+        {
+            cassert(psimage[index] == NULL);
+        }
+
+        pnimage[index] = nimage;
+        psimage[index] = simage;
+    }
+    /* Add image at the end */
+    else
+    {
+        cassert(index == n || index == UINT32_MAX);
+        arrpt_append(cell->nimages, nimage, Image);
+        arrpt_append(cell->simages, simage, Image);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dlayout_set_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    i_set_image(layout, image, 0, col, row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_add_image(DLayout *layout, const Image *image, const uint32_t col, const uint32_t row)
+{
+    i_set_image(layout, image, UINT32_MAX, col, row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_del_image(DLayout *layout, const uint32_t index, const uint32_t col, const uint32_t row)
 {
     DCell *cell = i_cell(layout, col, row);
     cassert_no_null(cell);
-    if (cell->nimage != NULL)
-        image_destroy(&cell->nimage);
+    arrpt_delete(cell->nimages, index, i_destroy_image, Image);
+    arrpt_delete(cell->simages, index, i_destroy_image, Image);
+}
 
-    if (cell->simage != NULL)
-        image_destroy(&cell->simage);
+/*---------------------------------------------------------------------------*/
 
-    if (image != NULL)
+void dlayout_clear_images(DLayout *layout, const uint32_t col, const uint32_t row)
+{
+    DCell *cell = i_cell(layout, col, row);
+    cassert_no_null(cell);
+    if (cell->nimages != NULL)
     {
-        cell->nimage = imgproc_binarize(image, i_MAIN_COLOR, i_BGCOLOR);
-        cell->simage = imgproc_binarize(image, i_SEL_COLOR, i_BGCOLOR);
+        arrpt_clear(cell->nimages, i_destroy_image, Image);
+        arrpt_clear(cell->simages, i_destroy_image, Image);
+    }
+    else
+    {
+        cassert(cell->simages == NULL);
     }
 }
 
@@ -592,7 +707,18 @@ static V2Df i_image_transform(T2Df *t2d, const scale_t scale, const R2Df *cell_r
 
 /*---------------------------------------------------------------------------*/
 
-void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, DCtx *ctx)
+static const Image *i_get_image(const DCell *cell, const uint32_t index, const bool_t sel)
+{
+    cassert_no_null(cell);
+    if (sel == TRUE)
+        return arrpt_get_const(cell->simages, index, Image);
+    else
+        return arrpt_get_const(cell->nimages, index, Image);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *glayout, const DSelect *hover, const DSelect *sel, const widget_t swidget, const Image *add_icon, const Font *default_font, DCtx *ctx)
 {
     uint32_t ncols, nrows, i, j;
     const DCell *dcell = NULL;
@@ -729,7 +855,7 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
             case ekCELL_TYPE_IMAGE:
             {
                 color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
-                const Image *image = i_is_cell_sel(hover, dlayout, i, j) ? dcell->simage : dcell->nimage;
+                const Image *image = i_get_image(dcell, 0, i_is_cell_sel(hover, dlayout, i, j));
 
                 if (image != NULL)
                 {
@@ -798,10 +924,109 @@ void dlayout_draw(const DLayout *dlayout, const FLayout *flayout, const Layout *
                 break;
             }
 
+            case ekCELL_TYPE_POPUP:
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                draw_line_color(ctx, color);
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_line_width(ctx, 3);
+                draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_line_width(ctx, 1);
+
+                if (arrst_size(fcell->widget.popup->elems, FElem) > 0)
+                {
+                    const Image *image = i_get_image(dcell, 0, i_is_cell_sel(hover, dlayout, i, j));
+                    const FElem *elem = arrst_first_const(fcell->widget.popup->elems, FElem);
+                    real32_t xoffset = 4;
+                    real32_t twidth, theight;
+                    real32_t tx, ty;
+
+                    if (image != NULL)
+                    {
+                        real32_t imgwidth = (real32_t)image_width(image);
+                        real32_t imgheight = (real32_t)image_height(image);
+                        real32_t yoffset = (dcell->content_rect.size.height - imgheight) / 2;
+                        draw_image(ctx, image, dcell->content_rect.pos.x + xoffset, dcell->content_rect.pos.y + yoffset);
+                        xoffset += imgwidth + 4;
+                    }
+
+                    draw_text_color(ctx, color);
+                    font_extents(default_font, tc(elem->text), -1.f, &twidth, &theight);
+                    tx = dcell->content_rect.pos.x + xoffset;
+                    ty = dcell->content_rect.pos.y + ((dcell->content_rect.size.height - theight) / 2);
+                    drawctrl_text(ctx, tc(elem->text), (int32_t)tx, (int32_t)ty, ekCTRL_STATE_NORMAL);
+                }
+
+                /* PopUp arrow */
+                {
+                    V2Df points[3];
+                    points[0].x = dcell->content_rect.pos.x + dcell->content_rect.size.width - 5;
+                    points[0].y = dcell->content_rect.pos.y + dcell->content_rect.size.height / 2 - 4;
+                    points[1].x = points[0].x - 8;
+                    points[1].y = points[0].y;
+                    points[2].x = (points[0].x + points[1].x) / 2;
+                    points[2].y = points[0].y + 6;
+                    draw_fill_color(ctx, color);
+                    draw_polygon(ctx, ekFILL, points, 3);
+                }
+
+                draw_line_color(ctx, i_MAIN_COLOR);
+                break;
+            }
+
+            case ekCELL_TYPE_LISTBOX:
+            {
+                color_t color = i_is_cell_sel(hover, dlayout, i, j) ? i_SEL_COLOR : i_MAIN_COLOR;
+                draw_line_color(ctx, color);
+                draw_fill_color(ctx, i_BGCOLOR);
+                draw_line_width(ctx, 2);
+                draw_rect(ctx, ekFILLSK, dcell->content_rect.pos.x, dcell->content_rect.pos.y, dcell->content_rect.size.width, dcell->content_rect.size.height);
+                draw_line_width(ctx, 1);
+
+                if (arrst_size(fcell->widget.listbox->elems, FElem) > 0)
+                {
+                    const ListBox *glistbox = cell_listbox(gcell);
+                    real32_t rheight = listbox_get_row_height(glistbox);
+                    real32_t ypos = 0;
+
+                    draw_text_color(ctx, color);
+
+                    /* TODO: Use clipping when ready */
+                    arrst_foreach_const(elem, fcell->widget.listbox->elems, FElem)
+                        if (dcell->content_rect.size.height >= ypos + rheight)
+                        {
+                            const Image *image = i_get_image(dcell, elem_i, i_is_cell_sel(hover, dlayout, i, j));
+                            real32_t xoffset = 4;
+                            real32_t twidth, theight;
+                            real32_t tx, ty;
+
+                            if (image != NULL)
+                            {
+                                real32_t imgwidth = (real32_t)image_width(image);
+                                real32_t imgheight = (real32_t)image_height(image);
+                                real32_t yoffset = (rheight - imgheight) / 2;
+                                draw_image(ctx, image, dcell->content_rect.pos.x + xoffset, dcell->content_rect.pos.y + ypos + yoffset);
+                                xoffset += imgwidth + 4;
+                            }
+
+                            font_extents(default_font, tc(elem->text), -1.f, &twidth, &theight);
+                            tx = dcell->content_rect.pos.x + xoffset;
+                            ty = dcell->content_rect.pos.y + ypos + ((rheight - theight) / 2);
+                            drawctrl_text(ctx, tc(elem->text), (int32_t)tx, (int32_t)ty, ekCTRL_STATE_NORMAL);
+                        }
+
+                        ypos += rheight;
+                    arrst_end();
+                }
+
+                draw_line_color(ctx, i_MAIN_COLOR);
+                break;
+            }
+
             case ekCELL_TYPE_LAYOUT:
             {
                 Layout *gsublayout = cell_layout(gcell);
-                dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, ctx);
+                dlayout_draw(dcell->sublayout, fcell->widget.layout, gsublayout, hover, sel, swidget, add_icon, default_font, ctx);
                 break;
             }
             }

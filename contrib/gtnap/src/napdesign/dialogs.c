@@ -19,6 +19,7 @@
 #include <core/event.h>
 #include <core/strings.h>
 #include <sewer/cassert.h>
+#include <sewer/bmem.h>
 
 typedef struct _dialoglayout_t DialogLayout;
 typedef struct _dialogdata_t DialogData;
@@ -33,6 +34,7 @@ struct _dialogdata_t
 {
     const char_t *path;
     FImage *fimage;
+    FElem *felem;
     Button *defbutton;
     Label *label;
     ImageView *imgview;
@@ -53,6 +55,22 @@ void dialog_dbind(void)
     dbind(DialogLayout, uint32_t, nrows);
     dbind_range(DialogLayout, uint32_t, ncols, 1, 20);
     dbind_range(DialogLayout, uint32_t, nrows, 1, 20);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static DialogData i_dialog_data(void)
+{
+    DialogData data;
+    bmem_zero(&data, DialogData);
+    return data;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void i_remove_dialog_data(DialogData *data)
+{
+    bmem_zero(data, DialogData);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -145,7 +163,7 @@ static Layout *i_save_buttons(DialogData *data)
 
 String *dialog_form_name(Window *parent, const char_t *name)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
@@ -190,6 +208,7 @@ String *dialog_form_name(Window *parent, const char_t *name)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fname;
 }
 
@@ -197,7 +216,7 @@ String *dialog_form_name(Window *parent, const char_t *name)
 
 FLabel *dialog_new_label(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 4);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
@@ -240,6 +259,7 @@ FLabel *dialog_new_label(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return flabel;
 }
 
@@ -247,7 +267,7 @@ FLabel *dialog_new_label(Window *parent, const DSelect *sel)
 
 FButton *dialog_new_button(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
@@ -286,6 +306,7 @@ FButton *dialog_new_button(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fbutton;
 }
 
@@ -293,7 +314,7 @@ FButton *dialog_new_button(Window *parent, const DSelect *sel)
 
 FCheck *dialog_new_check(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
@@ -332,6 +353,7 @@ FCheck *dialog_new_check(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fcheck;
 }
 
@@ -339,7 +361,7 @@ FCheck *dialog_new_check(Window *parent, const DSelect *sel)
 
 FEdit *dialog_new_edit(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 5);
     Layout *layout2 = layout_create(2, 1);
     Layout *layout3 = i_ok_cancel(&data, TRUE);
@@ -386,6 +408,7 @@ FEdit *dialog_new_edit(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fedit;
 }
 
@@ -406,7 +429,7 @@ static Layout *i_value_updown_layout(void)
 
 FText *dialog_new_text(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = layout_create(2, 2);
     Layout *layout3 = i_value_updown_layout();
@@ -451,6 +474,7 @@ FText *dialog_new_text(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return ftext;
 }
 
@@ -460,17 +484,31 @@ static void i_OnLoadImage(DialogData *data, Event *e)
 {
     const char_t *imgpath = NULL;
     cassert_no_null(data);
-    cassert_no_null(data->fimage);
+    cassert_no_null(data->path);
     imgpath = comwin_open_file(data->window, NULL, 0, data->path);
 	if (imgpath != NULL)
 	{
         Image *image = image_from_file(imgpath, NULL);
-        imageview_image(data->imgview, image);
-        str_destroy(&data->fimage->path);
-        data->fimage->path = str_relpath(ekLINUX, data->path, imgpath);
-        image_destroy(&image);
-        label_text(data->label, tc(data->fimage->path));
-        window_update(data->window);
+        if (image != NULL)
+        {
+            String **path = NULL;
+            imageview_image(data->imgview, image);
+            if (data->fimage != NULL)
+            {
+                cassert(data->felem == NULL);
+                path = &data->fimage->path;
+            }
+            else
+            {
+                cassert_no_null(data->felem);
+                path = &data->felem->iconpath;
+            }
+            str_destroy(path);
+            *path = str_relpath(ekLINUX, data->path, imgpath);
+            label_text(data->label, tc(*path));
+            window_update(data->window);
+            image_destroy(&image);
+        }
 	}
     unref(e);
 }
@@ -504,7 +542,7 @@ static Layout *i_image_layout(DialogData *data)
 
 FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folder_path)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 4);
     Layout *layout2 = layout_create(2, 2);
     Layout *layout3 = i_value_updown_layout();
@@ -553,6 +591,7 @@ FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folde
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fimage;
 }
 
@@ -560,7 +599,7 @@ FImage *dialog_new_image(Window *parent, const DSelect *sel, const char_t *folde
 
 FSlider *dialog_new_slider(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 2);
     Layout *layout2 = i_ok_cancel(&data, TRUE);
     Label *label1 = label_create();
@@ -588,6 +627,7 @@ FSlider *dialog_new_slider(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fslider;
 }
 
@@ -595,7 +635,7 @@ FSlider *dialog_new_slider(Window *parent, const DSelect *sel)
 
 FProgress *dialog_new_progress(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 2);
     Layout *layout2 = i_ok_cancel(&data, TRUE);
     Label *label1 = label_create();
@@ -623,7 +663,150 @@ FProgress *dialog_new_progress(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return fprogress;
+}
+
+/*---------------------------------------------------------------------------*/
+
+FPopUp *dialog_new_popup(Window *parent, const DSelect *sel)
+{
+    DialogData data = i_dialog_data();
+    Layout *layout1 = layout_create(1, 2);
+    Layout *layout2 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FPopUp *fpopup = dbind_create(FPopUp);
+    uint32_t ret = 0;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New Popup widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    layout_label(layout1, label1, 0, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&fpopup, FPopUp);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    i_remove_dialog_data(&data);
+    return fpopup;
+}
+
+/*---------------------------------------------------------------------------*/
+
+FListBox *dialog_new_listbox(Window *parent, const DSelect *sel)
+{
+    DialogData data = i_dialog_data();
+    Layout *layout1 = layout_create(1, 3);
+    Layout *layout2 = layout_create(2, 2);
+    Layout *layout3 = i_value_updown_layout();
+    Layout *layout4 = i_value_updown_layout();
+    Layout *layout5 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    Label *label3 = label_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FListBox *flistbox = dbind_create(FListBox);
+    uint32_t ret = 0;
+    data.window = window;
+    cassert_no_null(sel);
+    cassert_no_null(sel->flayout);
+    caption = str_printf("New ListBox widget in (%d, %d) of '%s'", sel->col, sel->row, tc(sel->flayout->name));
+    label_text(label1, tc(caption));
+    label_text(label2, "Min width");
+    label_text(label3, "Min height");
+    layout_label(layout1, label1, 0, 0);
+    layout_label(layout2, label2, 0, 0);
+    layout_label(layout2, label3, 0, 1);
+    layout_layout(layout2, layout3, 1, 0);
+    layout_layout(layout2, layout4, 1, 1);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_layout(layout1, layout5, 0, 2);
+    layout_vmargin(layout1, 0, 5);
+    layout_vmargin(layout1, 1, 5);
+    cell_dbind(layout_cell(layout2, 1, 0), FListBox, real32_t, min_width);
+    cell_dbind(layout_cell(layout2, 1, 1), FListBox, real32_t, min_height);
+    layout_dbind(layout1, NULL, FListBox);
+    layout_dbind_obj(layout1, flistbox, FListBox);
+    panel_layout(panel, layout1);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret != BUTTON_OK)
+        dbind_destroy(&flistbox, FListBox);
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    i_remove_dialog_data(&data);
+    return flistbox;
+}
+
+/*---------------------------------------------------------------------------*/
+
+FElem *dialog_new_elem(Window *parent, const char_t *folder_path)
+{
+    DialogData data = i_dialog_data();
+    Layout *layout1 = layout_create(1, 4);
+    Layout *layout2 = layout_create(2, 1);
+    Layout *layout3 = i_image_layout(&data);
+    Layout *layout4 = i_ok_cancel(&data, TRUE);
+    Label *label1 = label_create();
+    Label *label2 = label_create();
+    Edit *edit = edit_create();
+    Panel *panel = panel_create();
+    Window *window = window_create(ekWINDOW_STD | ekWINDOW_ESC);
+    String *caption = NULL;
+    FElem *felem = dbind_create(FElem);
+    uint32_t ret = 0;
+    data.path = folder_path;
+    data.felem = felem;
+    data.window = window;
+    caption = str_printf("Add new elem to Popup");
+    label_text(label1, tc(caption));
+    label_text(label2, "Text");
+    layout_label(layout1, label1, 0, 0);
+    layout_label(layout2, label2, 0, 0);
+    layout_edit(layout2, edit, 1, 0);
+    layout_layout(layout1, layout2, 0, 1);
+    layout_layout(layout1, layout3, 0, 2);
+    layout_layout(layout1, layout4, 0, 3);
+
+    //layout_vmargin(layout1, 0, 5);
+    panel_layout(panel, layout1);
+    window_panel(window, panel);
+    window_defbutton(window, data.defbutton);
+    i_center_window(parent, window);
+    ret = window_modal(window, parent);
+
+    if (ret == BUTTON_OK)
+    {
+        const char_t *text = edit_get_text(edit);
+        str_upd(&felem->text, text);
+    }
+    else
+    {
+        dbind_destroy(&felem, FElem);
+    }
+
+    window_destroy(&window);
+    str_destroy(&caption);
+    i_remove_dialog_data(&data);
+    return felem;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -657,7 +840,7 @@ static Layout *i_grid_layout(void)
 
 FLayout *dialog_new_layout(Window *parent, const DSelect *sel)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     DialogLayout diag;
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = i_grid_layout();
@@ -696,6 +879,7 @@ FLayout *dialog_new_layout(Window *parent, const DSelect *sel)
 
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
     return flayout;
 }
 
@@ -703,7 +887,7 @@ FLayout *dialog_new_layout(Window *parent, const DSelect *sel)
 
 uint8_t dialog_unsaved_changes(Window *parent)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = i_save_buttons(&data);
     Label *label = label_create();
@@ -722,6 +906,7 @@ uint8_t dialog_unsaved_changes(Window *parent)
     i_center_window(parent, window);
     ret = window_modal(window, parent);
     window_destroy(&window);
+    i_remove_dialog_data(&data);
 
     /* Save changes */
     if (ret == BUTTON_SAVE)
@@ -738,7 +923,7 @@ uint8_t dialog_unsaved_changes(Window *parent)
 
 bool_t dialog_remove_form(Window *parent, const char_t *name)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = i_ok_cancel(&data, FALSE);
     Label *label = label_create();
@@ -759,6 +944,7 @@ bool_t dialog_remove_form(Window *parent, const char_t *name)
     ret = window_modal(window, parent);
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
 
     if (ret == BUTTON_OK)
         return TRUE;
@@ -770,7 +956,7 @@ bool_t dialog_remove_form(Window *parent, const char_t *name)
 
 void dialog_name_already_exists(Window *parent, const char_t *name)
 {
-    DialogData data;
+    DialogData data = i_dialog_data();
     Layout *layout1 = layout_create(1, 3);
     Layout *layout2 = i_ok(&data);
     Label *label = label_create();
@@ -790,4 +976,5 @@ void dialog_name_already_exists(Window *parent, const char_t *name)
     window_modal(window, parent);
     window_destroy(&window);
     str_destroy(&caption);
+    i_remove_dialog_data(&data);
 }

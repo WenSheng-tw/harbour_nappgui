@@ -44,6 +44,18 @@ void dform_synchro_slider(DForm *form, const DSelect *sel);
 
 void dform_synchro_progress(DForm *form, const DSelect *sel);
 
+void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image);
+
+void dform_synchro_popup_clear(DForm *form, const DSelect *sel);
+
+void dform_synchro_listbox(DForm *form, const DSelect *sel);
+
+void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *image);
+
+void dform_synchro_listbox_del(DForm *form, const DSelect *sel, const uint32_t index);
+
+void dform_synchro_listbox_clear(DForm *form, const DSelect *sel);
+
 void dform_synchro_layout_margin(DForm *form, const DSelect *sel);
 
 void dform_synchro_column_margin(DForm *form, const DSelect *sel, const FColumn *fcol, const uint32_t col);
@@ -60,7 +72,7 @@ void dform_synchro_cell_valign(DForm *form, const DSelect *sel, const FCell *fce
 
 FCell *dform_sel_fcell(const DSelect *sel);
 
-void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, DCtx *ctx);
+void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, const Font *default_font, DCtx *ctx);
 
 uint32_t dform_selpath_size(const DForm *form);
 

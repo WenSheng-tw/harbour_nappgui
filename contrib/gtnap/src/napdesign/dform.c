@@ -11,7 +11,9 @@
 #include <gui/guicontrol.h>
 #include <gui/button.h>
 #include <gui/edit.h>
+#include <gui/popup.h>
 #include <gui/label.h>
+#include <gui/listbox.h>
 #include <gui/imageview.h>
 #include <gui/textview.h>
 #include <gui/layout.h>
@@ -243,7 +245,7 @@ static bool_t i_sel_equ(const DSelect *sel1, const DSelect *sel2)
     if (sel1->dlayout == NULL && sel2->dlayout == NULL)
         return TRUE;
 
-    if (sel1->elem == sel2->elem 
+    if (sel1->elem == sel2->elem
         && sel1->col == sel2->col
         && sel1->row == sel2->row)
         return TRUE;
@@ -541,7 +543,7 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                     return FALSE;
                 }
             }
-            
+
 			case ekWIDGET_IMAGEVIEW:
 			{
                 const char_t *folder_path = designer_folder_path(form->app);
@@ -623,7 +625,56 @@ bool_t dform_OnClick(DForm *form, Window *window, Panel *inspect, Panel *propedi
                     return FALSE;
                 }
             }
-    
+
+            case ekWIDGET_POPUP:
+            {
+                FPopUp *fpopup = dialog_new_popup(window, &sel);
+                if (fpopup != NULL)
+                {
+                    PopUp *popup = popup_create();
+                    cassert(arrst_size(fpopup->elems, FElem) == 0);
+                    i_sel_remove_cell(&sel);
+                    flayout_add_popup(sel.flayout, fpopup, sel.col, sel.row);
+                    layout_popup(sel.glayout, popup, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
+            case ekWIDGET_LISTBOX:
+            {
+                FListBox *flistbox = dialog_new_listbox(window, &sel);
+                if (flistbox != NULL)
+                {
+                    ListBox *listbox = listbox_create();
+                    cassert(arrst_size(flistbox->elems, FElem) == 0);
+                    listbox_size(listbox, s2df(flistbox->min_width, flistbox->min_height));
+                    i_sel_remove_cell(&sel);
+                    flayout_add_listbox(sel.flayout, flistbox, sel.col, sel.row);
+                    layout_listbox(sel.glayout, listbox, sel.col, sel.row);
+                    i_sel_synchro_cell(&sel);
+                    dform_compose(form);
+                    propedit_set(propedit, form, &sel);
+                    inspect_set(inspect, form);
+                    form->sel = sel;
+                    i_need_save(form);
+                    return TRUE;
+                }
+                else
+                {
+                    return FALSE;
+                }
+            }
+
 			case ekWIDGET_GRID_LAYOUT:
             {
                 FLayout *fsublayout = dialog_new_layout(window, &sel);
@@ -741,7 +792,7 @@ static FCell *i_sel_fcell(const DSelect *sel)
         cassert_no_null(sel->glayout);
         cassert_no_null(sel->dlayout);
         if (sel->elem == ekLAYELEM_CELL)
-        {        
+        {
             return flayout_cell(sel->flayout, sel->col, sel->row);
         }
     }
@@ -882,7 +933,7 @@ void dform_synchro_imageview(DForm *form, const DSelect *sel)
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_IMAGE);
     i_need_save(form);
-    imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);    
+    imgview = layout_get_imageview(sel->glayout, sel->col, sel->row);
     imageview_size(imgview, s2df(cell->widget.image->min_width, cell->widget.image->min_height));
     imageview_scale(imgview, i_scale(cell->widget.image->scale));
 }
@@ -898,7 +949,7 @@ void dform_synchro_slider(DForm *form, const DSelect *sel)
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_SLIDER);
     i_need_save(form);
-    slider = layout_get_slider(sel->glayout, sel->col, sel->row);    
+    slider = layout_get_slider(sel->glayout, sel->col, sel->row);
     slider_min_width(slider, cell->widget.slider->min_width);
     slider_value(slider, .5f);
 }
@@ -914,9 +965,108 @@ void dform_synchro_progress(DForm *form, const DSelect *sel)
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_PROGRESS);
     i_need_save(form);
-    progress = layout_get_progress(sel->glayout, sel->col, sel->row);    
+    progress = layout_get_progress(sel->glayout, sel->col, sel->row);
     progress_min_width(progress, cell->widget.progress->min_width);
     progress_value(progress, .5f);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image)
+{
+    FCell *cell = i_sel_fcell(sel);
+    PopUp *popup = NULL;
+    const FElem *elem = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_POPUP);
+    i_need_save(form);
+    popup = layout_get_popup(sel->glayout, sel->col, sel->row);
+    elem = arrst_last_const(cell->widget.popup->elems, FElem);
+    popup_add_elem(popup, tc(elem->text), image);
+    dlayout_add_image(sel->dlayout, image, sel->col, sel->row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_popup_clear(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    PopUp *popup = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_POPUP);
+    i_need_save(form);
+    popup = layout_get_popup(sel->glayout, sel->col, sel->row);
+    popup_clear(popup);
+    dlayout_clear_images(sel->dlayout, sel->col, sel->row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_listbox(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    listbox_size(listbox, s2df(cell->widget.listbox->min_width, cell->widget.listbox->min_height));
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *image)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    const FElem *elem = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    elem = arrst_last_const(cell->widget.listbox->elems, FElem);
+    listbox_add_elem(listbox, tc(elem->text), image);
+    dlayout_add_image(sel->dlayout, image, sel->col, sel->row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_listbox_del(DForm *form, const DSelect *sel, const uint32_t index)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    listbox_del_elem(listbox, index);
+    dlayout_del_image(sel->dlayout, index, sel->col, sel->row);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dform_synchro_listbox_clear(DForm *form, const DSelect *sel)
+{
+    FCell *cell = i_sel_fcell(sel);
+    ListBox *listbox = NULL;
+    cassert_no_null(form);
+    cassert_no_null(sel);
+    cassert_no_null(cell);
+    cassert(cell->type == ekCELL_TYPE_LISTBOX);
+    i_need_save(form);
+    listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
+    listbox_clear(listbox);
+    dlayout_clear_images(sel->dlayout, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1015,10 +1165,10 @@ FCell *dform_sel_fcell(const DSelect *sel)
 
 /*---------------------------------------------------------------------------*/
 
-void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, DCtx *ctx)
+void dform_draw(const DForm *form, const widget_t swidget, const Image *add_icon, const Font *default_font, DCtx *ctx)
 {
     cassert_no_null(form);
-    dlayout_draw(form->dlayout, form->flayout, form->glayout, &form->hover, &form->sel, swidget, add_icon, ctx);
+    dlayout_draw(form->dlayout, form->flayout, form->glayout, &form->hover, &form->sel, swidget, add_icon, default_font, ctx);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1027,7 +1177,7 @@ uint32_t dform_selpath_size(const DForm *form)
 {
     uint32_t n = 0;
     cassert_no_null(form);
-    n = arrst_size(form->sel_path, DSelect);    
+    n = arrst_size(form->sel_path, DSelect);
     if (n > 0)
     {
         const DSelect *last = arrst_last_const(form->sel_path, DSelect);
@@ -1037,7 +1187,7 @@ uint32_t dform_selpath_size(const DForm *form)
         else
             return (n - 1) * 2 + 1;
     }
-    
+
     return 0;
 }
 
@@ -1092,6 +1242,10 @@ const char_t *dform_selpath_caption(const DForm *form, const uint32_t col, const
                 return "SliderCell";
             case ekCELL_TYPE_PROGRESS:
                 return "ProgressCell";
+            case ekCELL_TYPE_POPUP:
+                return "PopUpCell";
+            case ekCELL_TYPE_LISTBOX:
+                return "ListBoxCell";
             case ekCELL_TYPE_LAYOUT:
                 return "LayoutCell";
             cassert_default();
