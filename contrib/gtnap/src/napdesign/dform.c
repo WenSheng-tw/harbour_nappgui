@@ -981,12 +981,11 @@ void dform_synchro_popup_add(DForm *form, const DSelect *sel, const Image *image
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_POPUP);
-    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     popup = layout_get_popup(sel->glayout, sel->col, sel->row);
     elem = arrst_last_const(cell->widget.popup->elems, FElem);
     popup_add_elem(popup, tc(elem->text), image);
-    dlayout_add_image(form->dlayout, image, sel->col, sel->row);
+    dlayout_add_image(sel->dlayout, image, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -999,11 +998,10 @@ void dform_synchro_popup_clear(DForm *form, const DSelect *sel)
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_POPUP);
-    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     popup = layout_get_popup(sel->glayout, sel->col, sel->row);
     popup_clear(popup);
-    dlayout_clear_images(form->dlayout, sel->col, sel->row);
+    dlayout_clear_images(sel->dlayout, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1032,12 +1030,11 @@ void dform_synchro_listbox_add(DForm *form, const DSelect *sel, const Image *ima
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_LISTBOX);
-    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
     elem = arrst_last_const(cell->widget.listbox->elems, FElem);
     listbox_add_elem(listbox, tc(elem->text), image);
-    dlayout_add_image(form->dlayout, image, sel->col, sel->row);
+    dlayout_add_image(sel->dlayout, image, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1050,11 +1047,10 @@ void dform_synchro_listbox_del(DForm *form, const DSelect *sel, const uint32_t i
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_LISTBOX);
-    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
     listbox_del_elem(listbox, index);
-    dlayout_del_image(form->dlayout, index, sel->col, sel->row);
+    dlayout_del_image(sel->dlayout, index, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1067,11 +1063,10 @@ void dform_synchro_listbox_clear(DForm *form, const DSelect *sel)
     cassert_no_null(sel);
     cassert_no_null(cell);
     cassert(cell->type == ekCELL_TYPE_LISTBOX);
-    cassert(form->dlayout == sel->dlayout);
     i_need_save(form);
     listbox = layout_get_listbox(sel->glayout, sel->col, sel->row);
     listbox_clear(listbox);
-    dlayout_clear_images(form->dlayout, sel->col, sel->row);
+    dlayout_clear_images(sel->dlayout, sel->col, sel->row);
 }
 
 /*---------------------------------------------------------------------------*/
